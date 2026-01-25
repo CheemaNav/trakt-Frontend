@@ -1,0 +1,213 @@
+.calls-panel {
+  padding: 20px;
+  background: white;
+  border-radius: 8px;
+}
+
+.calls-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.calls-header h2 {
+  font-size: 1.2rem;
+  color: #333;
+  margin: 0;
+}
+
+.calls-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.calls-count {
+  background: #667eea;
+  color: white;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.add-call-btn {
+  padding: 8px 16px;
+  background: #667eea;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.add-call-btn:hover {
+  background: #5568d3;
+}
+
+.call-form {
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.call-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+  margin-bottom: 15px;
+}
+
+.call-form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.call-form-field label {
+  font-size: 0.85rem;
+  color: #666;
+  font-weight: 500;
+}
+
+.call-form-field input,
+.call-form-field select,
+.call-form-field textarea {
+  padding: 10px;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  font-family: inherit;
+}
+
+.call-form-field input:focus,
+.call-form-field select:focus,
+.call-form-field textarea:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+.call-form-field textarea {
+  resize: vertical;
+}
+
+.call-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.call-form-actions button {
+  padding: 8px 20px;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.call-form-actions button[type="button"] {
+  background: #f0f0f0;
+  color: #666;
+}
+
+.call-form-actions button[type="button"]:hover {
+  background: #e0e0e0;
+}
+
+.call-form-actions button[type="submit"] {
+  background: #667eea;
+  color: white;
+}
+
+.call-form-actions button[type="submit"]:hover:not(:disabled) {
+  background: #5568d3;
+}
+
+.call-form-actions button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.calls-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.call-item {
+  display: flex;
+  gap: 15px;
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border-left: 3px solid #667eea;
+}
+
+.call-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.call-content {
+  flex: 1;
+}
+
+.call-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.call-outcome {
+  text-transform: capitalize;
+  font-weight: 600;
+  color: #333;
+  font-size: 0.95rem;
+}
+
+.call-duration {
+  font-size: 0.85rem;
+  color: #666;
+  font-weight: 500;
+}
+
+.call-notes {
+  font-size: 0.9rem;
+  color: #555;
+  margin-bottom: 8px;
+  line-height: 1.5;
+}
+
+.call-meta {
+  font-size: 0.85rem;
+  color: #999;
+}
+
+.calls-empty {
+  text-align: center;
+  padding: 40px 20px;
+  color: #999;
+}
+
+.calls-loading {
+  padding: 20px;
+  text-align: center;
+  color: #999;
+}
+
+
+
+
+
+
+

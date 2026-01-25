@@ -1,0 +1,328 @@
+.topbar {
+  background: #010124;
+  border-bottom: 1px solid var(--color-border);
+  padding: 6px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 110;
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.06);
+}
+
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.topbar-left h1 {
+  color: var(--color-heading);
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+.hamburger-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: var(--color-text-secondary);
+  padding: 0px;
+  border-radius: var(--radius-md);
+  transition: background-color var(--transition-base) var(--transition-ease);
+  outline: none;
+}
+
+
+.hamburger-button svg {
+  width: 24px;
+  height: 24px;
+  color: #fff;
+}
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+}
+
+.topbar-notifications {
+  position: relative;
+}
+
+.notification-bell {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  position: relative;
+  color: var(--color-text-muted);
+  transition: color 0.2s ease, background-color 0.2s ease;
+  padding: 6px;
+  border-radius: 50%;
+}
+
+.notification-bell:hover {
+  background-color: rgba(26, 115, 232, 0.12);
+  color: var(--color-primary);
+}
+
+.notification-bell svg {
+  width: 20px;
+  height: 20px;
+}
+
+.notification-badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  background: linear-gradient(135deg, #ef4444 0%, #f97316 100%);
+  color: white;
+  border-radius: 12px;
+  padding: 2px 6px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  box-shadow: 0 4px 8px rgba(239, 68, 68, 0.28);
+}
+
+.notifications-dropdown {
+  position: absolute;
+  top: 46px;
+  right: 0;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-medium);
+  width: 340px;
+  max-height: 420px;
+  overflow-y: auto;
+  z-index: 1000;
+}
+
+.notifications-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.notifications-header h3 {
+  margin: 0;
+  font-size: 1.05rem;
+  color: var(--color-heading);
+  font-weight: 600;
+}
+
+.notifications-count {
+  background: rgba(99, 102, 241, 0.14);
+  color: var(--color-primary-dark);
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.notifications-list {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.notification-item {
+  padding: 14px 16px;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-alt);
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.notification-item:hover {
+  background: rgba(26, 115, 232, 0.12);
+  transform: translateY(-1px);
+}
+
+.notification-item p {
+  margin: 0 0 6px 0;
+  color: var(--color-heading);
+  font-size: 0.92rem;
+  line-height: 1.45;
+}
+
+.notification-time {
+  color: var(--color-text-muted);
+  font-size: 0.8rem;
+}
+
+.topbar-user {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  position: relative;
+  cursor: pointer;
+  padding: 2px 14px;
+}
+
+
+.user-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #1a73e8 0%, #5390f5 100%);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.user-info {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.user-name {
+  font-weight: 600;
+  color: #fff;
+  font-size: 0.92rem;
+}
+
+.user-email {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+}
+
+.dropdown-arrow {
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+}
+
+.user-dropdown {
+  position: absolute;
+  top: 58px;
+  right: 0;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-medium);
+  min-width: 240px;
+  z-index: 1000;
+  overflow: hidden;
+}
+
+.dropdown-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 22px;
+  background: var(--color-surface-alt);
+}
+
+.dropdown-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #1a73e8 0%, #5390f5 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  color: #ffffff;
+  font-size: 1rem;
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.28);
+}
+
+.dropdown-user {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.dropdown-name {
+  font-weight: 600;
+  color: var(--color-heading);
+  font-size: 0.95rem;
+}
+
+.dropdown-email {
+  font-size: 0.82rem;
+  color: var(--color-text-muted);
+}
+
+.dropdown-divider {
+  height: 1px;
+  width: 100%;
+  background-color: var(--color-border);
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 14px 22px;
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.92rem;
+  color: var(--color-text);
+  font-weight: 500;
+}
+
+.dropdown-item:hover,
+.dropdown-item:focus {
+  background: rgba(26, 115, 232, 0.12);
+  outline: none;
+  color: var(--color-primary-dark);
+}
+
+.dropdown-item-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  color: var(--color-text-muted);
+}
+
+.dropdown-item:hover .dropdown-item-icon,
+.dropdown-item:focus .dropdown-item-icon {
+  color: var(--color-primary-dark);
+}
+
+.dropdown-item-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+@media (max-width: 900px) {
+ 
+
+  .user-info {
+    display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .notifications-dropdown {
+    width: 280px;
+    right: -40px;
+  }
+
+  .topbar-right {
+    gap: 14px;
+  }
+}
+

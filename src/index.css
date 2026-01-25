@@ -1,0 +1,54 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  --color-primary: #1a73e8;
+  --color-primary-dark: #0b57d0;
+  --color-secondary: #34a853;
+  --color-accent: #fbbc04;
+  --color-page-bg: #eef5f9;
+  --color-surface: #ffffff;
+  --color-surface-alt: #f1f3f9;
+  --color-border: #e1e5ef;
+  --color-border-strong: #c7cedf;
+  --color-text: #1f2933;
+  --color-text-muted: #6b7280;
+  --color-heading: #1a202c;
+  --shadow-soft: 0 8px 24px rgba(15, 23, 42, 0.06);
+  --shadow-medium: 0 16px 36px rgba(15, 23, 42, 0.08);
+  --shadow-strong: 0 28px 52px rgba(15, 23, 42, 0.12);
+  --radius-sm: 12px;
+  --radius-md: 16px;
+  --radius-lg: 20px;
+  font-family: 'Inter', 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: inherit;
+  background: var(--color-page-bg);
+  color: var(--color-text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+
+a {
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+::selection {
+  background: rgba(26, 115, 232, 0.18);
+}

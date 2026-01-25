@@ -1,0 +1,207 @@
+/* Deal-style Lead Card */
+.lead-card-deal {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  padding: 18px;
+  margin-bottom: 12px;
+  position: relative;
+  user-select: none;
+  transition: box-shadow 0.22s ease, transform 0.22s ease, border-color 0.22s ease;
+  cursor: grab;
+}
+
+.lead-card-deal:hover {
+  border-color: rgba(26, 115, 232, 0.28);
+}
+
+.lead-card-deal:active {
+  cursor: grabbing;
+}
+
+/* Expired Lead Styling */
+.lead-card-deal.expired-lead {
+  background: #fff4e6;
+  border: 2px solid #ff9800;
+  border-left: 4px solid #ff9800;
+}
+
+.lead-card-deal.expired-lead:hover {
+  border-color: #f57c00;
+  background: #ffe0b2;
+}
+
+.lead-type-badge .lead-type-label { display: none; }
+/* Lead Type Badge - Top Right */
+.lead-type-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: white;
+  z-index: 2;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.lead-type-icon {
+  font-size: 0.875rem;
+  line-height: 1;
+}
+
+.lead-type-label {
+  font-size: 0.7rem;
+  white-space: nowrap;
+}
+
+/* Status Icon - Top Right */
+.deal-status-icon {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  display: none;
+  z-index: 1;
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.12);
+}
+
+.deal-status-icon-indicator {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #ffffff;
+  opacity: 0.9;
+}
+
+/* Deal Title */
+.deal-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--color-heading);
+  margin: 0 0 6px 0;
+  padding-right: 120px;
+  line-height: 1.35;
+  letter-spacing: -0.01em;
+}
+
+/* Company Name */
+.deal-company {
+  font-size: 0.88rem;
+  color: var(--color-text-muted);
+  margin: 0 0 14px 0;
+  line-height: 1.45;
+}
+
+/* Deal Footer */
+.deal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 10px;
+}
+
+.deal-value {
+  font-size: 0.9rem;
+  color: var(--color-heading);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+}
+
+.deal-value-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  color: var(--color-text-muted);
+}
+
+.deal-value-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.deal-actions-toggle {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.2rem;
+  color: #999;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: background-color 0.2s ease, color 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.deal-actions-toggle:hover {
+  background-color: #f0f0f0;
+  color: #666;
+}
+
+/* Actions Menu */
+.deal-actions-menu {
+  position: absolute;
+  top: 40px;
+  right: 8px;
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 100;
+  min-width: 140px;
+  padding: 4px 0;
+}
+
+.action-menu-item {
+  width: 100%;
+  padding: 8px 16px;
+  text-align: left;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.875rem;
+  color: #333;
+  transition: background-color 0.2s ease;
+}
+
+.action-menu-item:hover {
+  background-color: #f8f8f8;
+}
+
+.action-menu-delete {
+  color: #ef4444;
+  border-top: 1px solid #f0f0f0;
+  padding-top: 12px;
+}
+
+.action-menu-delete:hover {
+  background-color: #fee;
+}
+
+/* Keep old styles for backward compatibility */
+.lead-card {
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 20px;
+  position: relative;
+  user-select: none;
+}
+
+.lead-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}

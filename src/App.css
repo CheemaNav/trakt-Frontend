@@ -1,0 +1,427 @@
+/* ============================================
+   CSS ROOT VARIABLES - Design System
+   Manage all colors, fonts, spacing from here
+   ============================================ */
+
+:root {
+  /* ============ PRIMARY COLORS ============ */
+  --color-primary: #1d3b85;
+  --color-primary-dark: #1d3b85;
+  --color-primary-light: #1d3b85;
+  --color-primary-hover: #132c6d;
+  --color-primary-active: #132c6d;
+
+  /* ============ SECONDARY COLORS ============ */
+  --color-secondary: #764ba2;
+  --color-secondary-dark: #5d3a7e;
+  --color-secondary-light: #8f6bb0;
+
+  /* ============ ACCENT COLORS ============ */
+  --color-accent: #fbbc04;
+  --color-accent-dark: #f9ab00;
+  --color-accent-light: #fdd663;
+
+  /* ============ SUCCESS COLORS ============ */
+  --color-success: #34a853;
+  --color-success-dark: #259446;
+  --color-success-light: #5cb870;
+  --color-success-bg: #e8f5e9;
+
+  /* ============ ERROR/DANGER COLORS ============ */
+  --color-error: #ea4335;
+  --color-error-dark: #c83428;
+  --color-error-light: #ef6b5f;
+  --color-error-bg: #fee;
+
+  /* ============ WARNING COLORS ============ */
+  --color-warning: #fbbc04;
+  --color-warning-dark: #f9ab00;
+  --color-warning-light: #fdd663;
+  --color-warning-bg: #fff8e1;
+
+  /* ============ INFO COLORS ============ */
+  --color-info: #1d3b85;
+  --color-info-dark: #1d3b85;
+  --color-info-light: #1d3b85;
+  --color-info-bg: #e3f2fd;
+
+  /* ============ NEUTRAL COLORS ============ */
+  --color-white: #ffffff;
+  --color-black: #000000;
+  --color-dark: #1a1a1a;
+  --color-dark-gray: #333333;
+  --color-gray: #666666;
+  --color-light-gray: #999999;
+  --color-lighter-gray: #cccccc;
+
+  /* ============ BACKGROUND COLORS ============ */
+  --color-bg-primary: #ffffff;
+  --color-bg-secondary: #f5f7fb;
+  --color-bg-tertiary: #f9fafb;
+  --color-bg-hover: #f3f4f6;
+  --color-bg-active: #e5e7eb;
+
+  /* ============ TEXT COLORS ============ */
+  --color-text-primary: #1a1a1a;
+  --color-text-secondary: #333333;
+  --color-text-tertiary: #666666;
+  --color-text-muted: #999999;
+  --color-text-disabled: #cccccc;
+  --color-text-inverse: #ffffff;
+
+  /* ============ BORDER COLORS ============ */
+  --color-border: #e0e0e0;
+  --color-border-light: #e5e7eb;
+  --color-border-medium: #d1d5db;
+  --color-border-dark: #9ca3af;
+  --color-border-focus: #1d3b85;
+
+  /* ============ BUTTON COLORS ============ */
+  --button-primary-bg: #1a1a1a;
+  --button-primary-color: #ffffff;
+  --button-primary-hover: #333333;
+  --button-primary-active: #000000;
+  --button-primary-disabled: #cccccc;
+
+  --button-secondary-bg: #ffffff;
+  --button-secondary-color: #1a1a1a;
+  --button-secondary-border: #e0e0e0;
+  --button-secondary-hover: #f3f4f6;
+
+  --button-success-bg: #34a853;
+  --button-success-color: #ffffff;
+  --button-success-hover: #259446;
+
+  --button-error-bg: #ea4335;
+  --button-error-color: #ffffff;
+  --button-error-hover: #c83428;
+
+  --button-link-color: #1d3b85;
+  --button-link-hover: rgb(51, 70, 178);
+
+  /* ============ FONTS ============ */
+  --font-family-primary: 'Inter', 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
+  --font-family-secondary: 'Inter', sans-serif;
+  --font-family-mono: 'Courier New', monospace;
+
+  /* ============ FONT SIZES ============ */
+  --font-size-xs: 0.75rem;    /* 12px */
+  --font-size-sm: 0.875rem;   /* 14px */
+  --font-size-base: 1rem;     /* 16px */
+  --font-size-lg: 1.125rem;   /* 18px */
+  --font-size-xl: 1.25rem;    /* 20px */
+  --font-size-2xl: 1.5rem;    /* 24px */
+  --font-size-3xl: 2rem;      /* 32px */
+  --font-size-4xl: 2.5rem;    /* 40px */
+
+  /* ============ FONT WEIGHTS ============ */
+  --font-weight-light: 300;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  /* ============ LINE HEIGHTS ============ */
+  --line-height-tight: 1.25;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.75;
+
+  /* ============ SPACING ============ */
+  --spacing-xs: 0.25rem;   /* 4px */
+  --spacing-sm: 0.5rem;    /* 8px */
+  --spacing-md: 1rem;      /* 16px */
+  --spacing-lg: 1.5rem;    /* 24px */
+  --spacing-xl: 2rem;      /* 32px */
+  --spacing-2xl: 3rem;     /* 48px */
+  --spacing-3xl: 4rem;     /* 64px */
+
+  /* ============ BORDER RADIUS ============ */
+  --radius-none: 0;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+  --radius-2xl: 16px;
+  --radius-full: 9999px;
+
+  /* ============ SHADOWS ============ */
+  --shadow-none: none;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+  --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.1);
+  --shadow-2xl: 0 25px 50px rgba(0, 0, 0, 0.15);
+  --shadow-inner: inset 0 2px 4px rgba(0, 0, 0, 0.06);
+
+  /* ============ TRANSITIONS ============ */
+  --transition-fast: 150ms;
+  --transition-base: 200ms;
+  --transition-slow: 300ms;
+  --transition-ease: ease;
+  --transition-ease-in: ease-in;
+  --transition-ease-out: ease-out;
+  --transition-ease-in-out: ease-in-out;
+
+  /* ============ Z-INDEX ============ */
+  --z-index-dropdown: 1000;
+  --z-index-sticky: 1020;
+  --z-index-fixed: 1030;
+  --z-index-modal-backdrop: 1040;
+  --z-index-modal: 1050;
+  --z-index-popover: 1060;
+  --z-index-tooltip: 1070;
+
+  /* ============ BREAKPOINTS (for reference) ============ */
+  /* Use in media queries: @media (min-width: 640px) */
+  --breakpoint-sm: 640px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1280px;
+  --breakpoint-2xl: 1536px;
+}
+
+/* ============================================
+   GLOBAL STYLES
+   ============================================ */
+html { scrollbar-gutter: auto; }
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.App {
+  min-height: 100vh;
+  background: var(--color-bg-secondary);
+  padding: 20px;
+  font-family: var(--font-family-primary);
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+h1 {
+  color: var(--color-text-primary);
+  text-align: center;
+  font-size: var(--font-size-3xl);
+  margin-bottom: 10px;
+  font-weight: var(--font-weight-semibold);
+}
+
+.subtitle {
+  text-align: center;
+  color: var(--color-text-tertiary);
+  font-size: var(--font-size-lg);
+  margin-bottom: 30px;
+}
+
+.form-container, .users-container {
+  background: var(--color-bg-primary);
+  border-radius: var(--radius-xl);
+  padding: 28px;
+  margin-bottom: 30px;
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--color-border);
+}
+
+.form-container h2, .users-container h2 {
+  color: var(--color-text-secondary);
+  margin-bottom: 20px;
+  font-size: var(--font-size-2xl);
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 12px 15px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  font-size: var(--font-size-base);
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: var(--color-border-focus);
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.form-actions {
+  display: flex;
+  gap: 10px;
+}
+
+/* ============================================
+   BUTTON STYLES
+   ============================================ */
+
+button {
+  padding: 12px 25px;
+  border: none;
+  border-radius: var(--radius-lg);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+  font-family: var(--font-family-primary);
+  transition: background-color var(--transition-base) var(--transition-ease);
+}
+
+/* Primary Button */
+button[type="submit"],
+.btn-primary {
+  background: var(--button-primary-bg);
+  color: var(--button-primary-color);
+}
+
+button[type="submit"]:hover:not(:disabled),
+.btn-primary:hover:not(:disabled) {
+  background: var(--button-primary-hover);
+}
+
+button[type="submit"]:active:not(:disabled),
+.btn-primary:active:not(:disabled) {
+  background: var(--button-primary-active);
+}
+
+button[type="submit"]:disabled,
+.btn-primary:disabled {
+  background: var(--button-primary-disabled);
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Secondary Button */
+.cancel-btn,
+.btn-secondary {
+  background: var(--button-secondary-bg);
+  color: var(--button-secondary-color);
+  border: 1px solid var(--button-secondary-border);
+}
+
+.cancel-btn:hover,
+.btn-secondary:hover {
+  background: var(--button-secondary-hover);
+}
+
+/* Success Button */
+.edit-btn,
+.btn-success {
+  background: var(--button-success-bg);
+  color: var(--button-success-color);
+}
+
+.edit-btn:hover,
+.btn-success:hover {
+  background: var(--button-success-hover);
+}
+
+/* Error/Danger Button */
+.delete-btn,
+.btn-error,
+.btn-danger {
+  background: var(--button-error-bg);
+  color: var(--button-error-color);
+}
+
+.delete-btn:hover,
+.btn-error:hover,
+.btn-danger:hover {
+  background: var(--button-error-hover);
+}
+
+/* Link Button */
+.btn-link {
+  background: transparent;
+  color: var(--button-link-color);
+  padding: 0;
+  text-decoration: underline;
+}
+
+.btn-link:hover {
+  color: var(--button-link-hover);
+}
+
+/* ============================================
+   USER CARDS
+   ============================================ */
+
+.users-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.user-card {
+  background: var(--color-bg-tertiary);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  border: 1px solid var(--color-border);
+}
+
+.user-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--color-border-focus);
+}
+
+.user-info h3 {
+  color: var(--color-text-secondary);
+  margin-bottom: 8px;
+  font-size: var(--font-size-xl);
+}
+
+.user-info p {
+  color: var(--color-text-tertiary);
+  margin-bottom: 8px;
+  word-break: break-word;
+}
+
+.user-info small {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.user-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 15px;
+}
+
+.edit-btn,
+.delete-btn {
+  flex: 1;
+}
+
+.no-users {
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-lg);
+  padding: 40px;
+}
+
+/* ============================================
+   RESPONSIVE DESIGN
+   ============================================ */
+
+@media (max-width: 768px) {
+  .container {
+    padding: 10px;
+  }
+
+  h1 {
+    font-size: var(--font-size-2xl);
+  }
+
+  .form-container, .users-container {
+    padding: 20px;
+  }
+
+  .users-grid {
+    grid-template-columns: 1fr;
+  }
+}

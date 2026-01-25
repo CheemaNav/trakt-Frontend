@@ -1,0 +1,85 @@
+.dashboard-container {
+  display: flex;
+  min-height: 100vh;
+  position: relative;
+}
+
+.dashboard-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  transition: all ease 0.5s;
+  margin-left: 260px;
+  background: var(--color-page-bg);
+  width: 100%;
+  overflow: hidden;
+}
+
+.dashboard-content {
+  padding: 15px 15px 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.dashboard-content > *:not(.coming-soon) {
+  animation: fadeUp 0.35s ease both;
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.coming-soon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  text-align: center;
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-soft);
+}
+
+.coming-soon-content h1 {
+  font-size: 2.4rem;
+  color: var(--color-heading);
+  margin-bottom: 12px;
+  letter-spacing: -0.02em;
+}
+
+.coming-soon-content p {
+  font-size: 1.1rem;
+  color: var(--color-text-muted);
+  margin-bottom: 24px;
+}
+
+.coming-soon-icon {
+  font-size: 4.5rem;
+}
+
+@media (max-width: 1024px) {
+  .dashboard-content {
+    padding: 28px 24px 32px;
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboard-main {
+    margin-left: 0;
+  }
+
+  .dashboard-content {
+    padding: 24px 20px 28px;
+  }
+}
+
