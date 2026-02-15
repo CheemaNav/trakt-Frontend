@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { createPortal } from 'react-dom';
+
 import './PipelineAdd.css';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001/api';
@@ -100,7 +100,7 @@ function PipelineAdd() {
       });
 
       if (response.ok) {
-        const data = await response.json();
+        await response.json();
         // Navigate back to leads, the pipeline will be auto-selected
         navigate('/leads');
       } else {

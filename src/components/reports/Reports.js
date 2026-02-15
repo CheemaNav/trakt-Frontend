@@ -68,8 +68,43 @@ function Reports() {
   }, []);
 
   useEffect(() => {
+    const fetchActivitiesForLeads = async () => {
+      if (leads.length === 0) return;
+
+      try {
+        const token = localStorage.getItem('token');
+        const activitiesMap = {};
+
+        // Fetch activities for each lead
+        await Promise.all(
+          leads.map(async (lead) => {
+            try {
+              const response = await fetch(`${API_URL}/leads/${lead.id}/activities`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+              });
+              if (response.ok) {
+                const data = await response.json();
+                if (data.activities && data.activities.length > 0) {
+                  // Get the most recent activity
+                  const latestActivity = data.activities[0];
+                  activitiesMap[lead.id] = latestActivity;
+                }
+              }
+            } catch (error) {
+              console.error(`Error fetching activities for lead ${lead.id}:`, error);
+            }
+          })
+        );
+
+        setActivities(activitiesMap);
+      } catch (error) {
+        console.error('Error fetching activities:', error);
+      }
+    };
+
     fetchActivitiesForLeads();
   }, [leads]);
+
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -115,40 +150,6 @@ function Reports() {
     }
   };
 
-  const fetchActivitiesForLeads = async () => {
-    if (leads.length === 0) return;
-
-    try {
-      const token = localStorage.getItem('token');
-      const activitiesMap = {};
-
-      // Fetch activities for each lead
-      await Promise.all(
-        leads.map(async (lead) => {
-          try {
-            const response = await fetch(`${API_URL}/leads/${lead.id}/activities`, {
-              headers: { 'Authorization': `Bearer ${token}` }
-            });
-            if (response.ok) {
-              const data = await response.json();
-              if (data.activities && data.activities.length > 0) {
-                // Get the most recent activity
-                const latestActivity = data.activities[0];
-                activitiesMap[lead.id] = latestActivity;
-              }
-            }
-          } catch (error) {
-            console.error(`Error fetching activities for lead ${lead.id}:`, error);
-          }
-        })
-      );
-
-      setActivities(activitiesMap);
-    } catch (error) {
-      console.error('Error fetching activities:', error);
-    }
-  };
-
   const getOwnerName = (ownerId) => {
     const owner = users.find(u => u.id === ownerId);
     return owner ? owner.name : 'Unassigned';
@@ -156,41 +157,41 @@ function Reports() {
 
   const formatActivity = (activity) => {
     if (!activity) return 'No recent activity';
-    
+
     const action = activity.action || '';
     const details = activity.details || '';
     const createdAt = activity.created_at || activity.timestamp;
-    
+
     let activityText = action;
     if (details) {
       activityText += ` ${details}`;
     }
-    
+
     if (createdAt) {
       const date = new Date(createdAt);
-      const formattedDate = date.toLocaleDateString('en-US', { 
-        month: 'short', 
-        day: 'numeric', 
-        year: 'numeric' 
+      const formattedDate = date.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric'
       });
-      const formattedTime = date.toLocaleTimeString('en-US', { 
-        hour: 'numeric', 
+      const formattedTime = date.toLocaleTimeString('en-US', {
+        hour: 'numeric',
         minute: '2-digit',
-        hour12: true 
+        hour12: true
       });
       activityText += `. ${formattedDate}, ${formattedTime}`;
     }
-    
+
     return activityText;
   };
 
   const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { 
-      month: 'short', 
-      day: 'numeric', 
-      year: 'numeric' 
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
     });
   };
 
@@ -260,7 +261,7 @@ function Reports() {
       {/* Header with Filters */}
       <div className="reports-header">
         <div className="reports-filters">
-          <select 
+          <select
             className="filter-dropdown"
             value={filters.owner}
             onChange={(e) => handleFilterChange('owner', e.target.value)}
@@ -270,8 +271,8 @@ function Reports() {
               <option key={user.id} value={user.id}>{user.name}</option>
             ))}
           </select>
-          
-          <select 
+
+          <select
             className="filter-dropdown"
             value={filters.timePeriod}
             onChange={(e) => handleFilterChange('timePeriod', e.target.value)}
@@ -283,7 +284,7 @@ function Reports() {
           </select>
 
           <div className="filter-dropdown-wrapper">
-            <button 
+            <button
               className="filter-button"
               onClick={(e) => {
                 e.stopPropagation();
@@ -307,7 +308,7 @@ function Reports() {
           </div>
 
           <div className="filter-dropdown-wrapper">
-            <button 
+            <button
               className="filter-button"
               onClick={(e) => {
                 e.stopPropagation();
@@ -324,7 +325,7 @@ function Reports() {
             {showStageDropdown && (
               <div className="filter-dropdown-menu" onClick={(e) => e.stopPropagation()}>
                 {stages.map(stage => (
-                  <button 
+                  <button
                     key={stage}
                     onClick={() => {
                       handleFilterChange('stage', stage);
@@ -339,7 +340,7 @@ function Reports() {
           </div>
 
           <div className="filter-dropdown-wrapper">
-            <button 
+            <button
               className="filter-button"
               onClick={(e) => {
                 e.stopPropagation();
@@ -356,7 +357,7 @@ function Reports() {
             {showStatusDropdown && (
               <div className="filter-dropdown-menu" onClick={(e) => e.stopPropagation()}>
                 {statuses.map(status => (
-                  <button 
+                  <button
                     key={status}
                     onClick={() => {
                       handleFilterChange('status', status);
@@ -404,7 +405,7 @@ function Reports() {
       <div className="reports-table-controls">
         <div className="table-entries">
           <span>Show</span>
-          <select 
+          <select
             value={itemsPerPage}
             onChange={(e) => {
               setItemsPerPage(Number(e.target.value));
@@ -450,9 +451,9 @@ function Reports() {
                 const displayStatus = getDisplayStatus(lead.status);
                 const stage = getStageFromStatus(lead.status);
                 const activity = activities[lead.id];
-                
+
                 return (
-                  <tr 
+                  <tr
                     key={lead.id}
                     onClick={() => navigate(`/leads/${lead.id}`)}
                     style={{ cursor: 'pointer' }}
@@ -464,8 +465,8 @@ function Reports() {
                       <span className="stage-pill">{stage}</span>
                     </td>
                     <td>
-                      <span 
-                        className="status-pill" 
+                      <span
+                        className="status-pill"
                         style={{ backgroundColor: statusColors[displayStatus] || '#6b7280' }}
                       >
                         {displayStatus}
@@ -500,7 +501,7 @@ function Reports() {
           Showing {filteredLeads.length === 0 ? 0 : startIndex + 1} to {Math.min(endIndex, filteredLeads.length)} of {filteredLeads.length} entries
         </div>
         <div className="pagination-controls">
-          <button 
+          <button
             className="pagination-btn"
             disabled={currentPage === 1}
             onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
@@ -516,7 +517,7 @@ function Reports() {
               {page}
             </button>
           ))}
-          <button 
+          <button
             className="pagination-btn"
             disabled={currentPage === totalPages || totalPages === 0}
             onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}

@@ -69,7 +69,7 @@ function Products() {
       const response = await fetch(`${API_URL}/products`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      
+
       if (response.ok) {
         const data = await response.json();
         console.log('Products fetched:', data.products?.length || 0, 'products');
@@ -133,10 +133,7 @@ function Products() {
     return colors[index];
   };
 
-  const getOwnerName = (ownerId) => {
-    const owner = users.find(u => u.id === ownerId);
-    return owner ? owner.name : 'Unassigned';
-  };
+
 
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-IN', {
@@ -171,8 +168,8 @@ function Products() {
       const query = searchQuery.toLowerCase();
       const matchesName = product.name?.toLowerCase().includes(query);
       const matchesCode = product.code?.toLowerCase().includes(query);
-      const matchesLead = product.lead_name?.toLowerCase().includes(query) || 
-                         product.lead_company?.toLowerCase().includes(query);
+      const matchesLead = product.lead_name?.toLowerCase().includes(query) ||
+        product.lead_company?.toLowerCase().includes(query);
       if (!matchesName && !matchesCode && !matchesLead) {
         return false;
       }
@@ -369,7 +366,7 @@ function Products() {
               currentPageProducts.map(product => {
                 const ownerName = product.owner || product.owner_name || 'Unassigned';
                 const isActive = product.active !== undefined ? product.active : true;
-                
+
                 return (
                   <tr key={product.id}>
                     <td>

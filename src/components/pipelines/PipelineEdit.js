@@ -36,46 +36,46 @@ function PipelineEdit() {
   const [error, setError] = useState('');
 
   useEffect(() => {
+    const fetchPipeline = async () => {
+      try {
+        setIsLoading(true);
+        const token = localStorage.getItem('token');
+        const response = await fetch(`${API_URL}/pipelines/${id}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.pipeline) {
+            setPipelineName(data.pipeline.name || '');
+            setCurrency(data.pipeline.currency || 'USD');
+            if (data.pipeline.stages && data.pipeline.stages.length > 0) {
+              const formattedStages = data.pipeline.stages.map(stage => ({
+                id: stage.id,
+                name: stage.name,
+                probability: stage.probability || 0,
+                color: stage.color || '#1a73e8',
+                isNew: false
+              }));
+              setStages(formattedStages);
+            }
+          }
+        } else {
+          const errorData = await response.json();
+          setError(errorData.error || 'Failed to load pipeline');
+        }
+      } catch (error) {
+        console.error('Error fetching pipeline:', error);
+        setError('Failed to load pipeline. Please try again.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
     fetchPipeline();
   }, [id]);
-
-  const fetchPipeline = async () => {
-    try {
-      setIsLoading(true);
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_URL}/pipelines/${id}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        if (data.pipeline) {
-          setPipelineName(data.pipeline.name || '');
-          setCurrency(data.pipeline.currency || 'USD');
-          if (data.pipeline.stages && data.pipeline.stages.length > 0) {
-            const formattedStages = data.pipeline.stages.map(stage => ({
-              id: stage.id,
-              name: stage.name,
-              probability: stage.probability || 0,
-              color: stage.color || '#1a73e8',
-              isNew: false
-            }));
-            setStages(formattedStages);
-          }
-        }
-      } else {
-        const errorData = await response.json();
-        setError(errorData.error || 'Failed to load pipeline');
-      }
-    } catch (error) {
-      console.error('Error fetching pipeline:', error);
-      setError('Failed to load pipeline. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleAddStage = () => {
     const newStage = {
