@@ -54,45 +54,45 @@ function Login() {
     }
   };
 
-  const handleGoogleCredential = async (response) => {
-    if (!response?.credential) {
-      setError('Google sign-in was cancelled. Please try again.');
-      return;
-    }
-
-    setError('');
-    setLoading(true);
-
-    try {
-      const res = await fetch(`${API_URL}/auth/google`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ credential: response.credential }),
-      });
-
-      const data = await res.json();
-
-      if (res.ok) {
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('user', JSON.stringify(data.user));
-        navigate('/dashboard');
-      } else {
-        setError(data.error || 'Google login failed');
-      }
-    } catch (error) {
-      setError('Network error during Google login. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
     if (!GOOGLE_CLIENT_ID) {
       console.warn('Google client ID is not configured.');
       return;
     }
+
+    const handleGoogleCredential = async (response) => {
+      if (!response?.credential) {
+        setError('Google sign-in was cancelled. Please try again.');
+        return;
+      }
+
+      setError('');
+      setLoading(true);
+
+      try {
+        const res = await fetch(`${API_URL}/auth/google`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ credential: response.credential }),
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+          localStorage.setItem('token', data.token);
+          localStorage.setItem('user', JSON.stringify(data.user));
+          navigate('/dashboard');
+        } else {
+          setError(data.error || 'Google login failed');
+        }
+      } catch (error) {
+        setError('Network error during Google login. Please try again.');
+      } finally {
+        setLoading(false);
+      }
+    };
 
     const initializeGoogle = () => {
       if (window.google?.accounts?.id && googleButtonRef.current) {
@@ -129,7 +129,7 @@ function Login() {
     return () => {
       window.google?.accounts?.id?.cancel();
     };
-  }, [GOOGLE_CLIENT_ID]);
+  }, [navigate]);
 
   return (
     <div className="auth-container">
@@ -138,7 +138,7 @@ function Login() {
         <div className="auth-image-placeholder">
           {/* Image placeholder - leave empty for now */}
         </div>
-       
+
       </div>
 
       {/* Right Side - Login Form */}
@@ -177,7 +177,7 @@ function Login() {
                   placeholder="Enter your password"
                   required
                 />
-                <span 
+                <span
                   className="password-toggle-icon"
                   onClick={() => setShowPassword(!showPassword)}
                 >
@@ -201,7 +201,7 @@ function Login() {
                 <input type="checkbox" />
                 <span>Remember Me</span>
               </label>
-              
+
             </div>
 
             <button type="submit" className="auth-button" disabled={loading}>
