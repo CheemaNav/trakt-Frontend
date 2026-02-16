@@ -59,8 +59,8 @@ function DraggableLeadCard({ lead, onDelete, onStatusChange }) {
   const nav = useNavigate();
   const [{ isDragging }, drag, preview] = useDrag(() => ({
     type: 'lead',
-    item: { 
-      id: lead.id, 
+    item: {
+      id: lead.id,
       currentStatus: lead.status,
       currentStageId: lead.stage_id || lead.pipeline_stage_id, // Add current stage ID
       leadData: lead // Store full lead data for the drop handler
@@ -78,30 +78,30 @@ function DraggableLeadCard({ lead, onDelete, onStatusChange }) {
   }), [lead.id, lead.status, lead.stage_id, lead.pipeline_stage_id, lead]);
 
   return (
-    <div 
+    <div
       ref={drag}
       onMouseDown={(e) => {
         // Store click position
         const clickX = e.clientX;
         const clickY = e.clientY;
-        
+
         const handleMouseUp = (upEvent) => {
           // Check if it was a click (little movement)
           const moveX = Math.abs(upEvent.clientX - clickX);
           const moveY = Math.abs(upEvent.clientY - clickY);
-          
+
           if (moveX < 5 && moveY < 5 && !isDragging) {
             // It was a click, navigate
             nav(`/leads/${lead.id}`);
           }
-          
+
           document.removeEventListener('mouseup', handleMouseUp);
         };
-        
+
         document.addEventListener('mouseup', handleMouseUp);
       }}
-      style={{ 
-        opacity: isDragging ? 0.5 : 1, 
+      style={{
+        opacity: isDragging ? 0.5 : 1,
         cursor: 'grab'
       }}
       className="draggable-lead-wrapper"
@@ -205,7 +205,7 @@ function Leads() {
 
     // Check if we have a saved pipeline ID in localStorage
     const savedPipelineId = localStorage.getItem('selectedPipelineId');
-    
+
     if (savedPipelineId) {
       // Try to find the saved pipeline
       const savedPipeline = pipelines.find(p => p.id === parseInt(savedPipelineId));
@@ -259,13 +259,13 @@ function Leads() {
         console.error('No token found');
         return;
       }
-      
+
       const response = await fetch(`${API_URL}/pipelines`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
-      
+
       if (response.ok) {
         const data = await response.json();
         setPipelines(data.pipelines || []);
@@ -282,6 +282,7 @@ function Leads() {
   };
 
   const fetchPipelineStages = async (pipelineId) => {
+    console.log('[Leads] Fetching stages for pipeline:', pipelineId);
     try {
       const token = localStorage.getItem('token');
       if (!token || !pipelineId) {
@@ -289,15 +290,16 @@ function Leads() {
         setStages(DEFAULT_STAGES);
         return;
       }
-      
+
       const response = await fetch(`${API_URL}/pipelines/${pipelineId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
-      
+
       if (response.ok) {
         const data = await response.json();
+        console.log('[Leads] Stages response:', data);
         if (data.pipeline && data.pipeline.stages) {
           const formattedStages = data.pipeline.stages.map(stage => ({
             id: stage.id, // Use stage ID instead of name
@@ -307,17 +309,27 @@ function Leads() {
             color: stage.color || '#1a73e8',
             probability: stage.probability || 0
           }));
-          setStages(formattedStages.length > 0 ? formattedStages : DEFAULT_STAGES);
+          console.log('[Leads] Setting formatted stages:', formattedStages);
+          // FIX: Don't fallback to DEFAULT_STAGES if we have an explicit pipeline response, 
+          // essentially trust the API. If empty, it's empty.
+          setStages(formattedStages);
         } else {
-          setStages(DEFAULT_STAGES);
+          console.warn('[Leads] No stages found in response.');
+          // If the pipeline exists but has no stages, we should probably show empty or a placeholder, 
+          // NOT default stages which won't match the leads.
+          setStages([]);
         }
       } else {
         console.error('Failed to fetch pipeline stages:', response.status);
-        setStages(DEFAULT_STAGES);
+        // On error, better to keep previous stages or show error than defaults?
+        // But defaults might be better than nothing if it's a network glitch? 
+        // For now, let's stick to defaults ONLY on error, but maybe that's the cause of the flash if error happens?
+        // Let's try NOT setting defaults on error if we already have stages?
+        // setStages(DEFAULT_STAGES); 
       }
     } catch (error) {
       console.error('Error fetching pipeline stages:', error);
-      setStages(DEFAULT_STAGES);
+      // setStages(DEFAULT_STAGES);
     }
   };
 
@@ -380,27 +392,28 @@ function Leads() {
         setLeads([]);
         return;
       }
-      
+
       // Only fetch leads if we have a valid pipeline (with name property) or no pipelines exist
       // This prevents fetching with incomplete pipeline data
-      const pipelineId = selectedPipeline?.id && selectedPipeline?.name 
-        ? selectedPipeline.id 
+      const pipelineId = selectedPipeline?.id && selectedPipeline?.name
+        ? selectedPipeline.id
         : null;
-      
-      const url = pipelineId 
+
+      const url = pipelineId
         ? `${API_URL}/leads?pipeline_id=${pipelineId}`
         : `${API_URL}/leads`;
-      
+
       const response = await fetch(url, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
-      
+
       if (response.ok) {
         const data = await response.json();
         const fetchedLeads = data.leads || [];
-        console.log(`Fetched ${fetchedLeads.length} leads for pipeline:`, selectedPipeline?.name || 'All');
+        console.log(`[Leads] Fetched ${fetchedLeads.length} leads for pipeline:`, selectedPipeline?.name || 'All');
+        console.log('[Leads] Sample lead:', fetchedLeads[0]);
         setLeads(fetchedLeads);
 
         // Derive filter options from the fetched leads (pipeline-aware)
@@ -434,7 +447,7 @@ function Leads() {
     try {
       console.log('[Leads] handleAddLead called with leadData:', leadData);
       console.log('[Leads] lead_type in request:', leadData.lead_type);
-      
+
       const token = localStorage.getItem('token');
       const response = await fetch(`${API_URL}/leads`, {
         method: 'POST',
@@ -554,15 +567,15 @@ function Leads() {
   const handleDrop = async (leadId, newStageId, leadData = null) => {
     try {
       const token = localStorage.getItem('token');
-      
+
       // Try to find lead in the array first, then use leadData from drag item if not found
       let lead = leads.find(l => String(l.id) === String(leadId) || l.id === leadId);
-      
+
       // If not found in array, use the leadData passed from drag item
       if (!lead && leadData) {
         lead = leadData;
       }
-      
+
       // If still not found, fetch from API
       if (!lead) {
         console.error('Lead not found in state, fetching from API...', { leadId, leads });
@@ -572,7 +585,7 @@ function Leads() {
               'Authorization': `Bearer ${token}`
             }
           });
-          
+
           if (fetchResponse.ok) {
             const data = await fetchResponse.json();
             lead = data.lead;
@@ -591,14 +604,14 @@ function Leads() {
       const newStageName = newStage ? newStage.name || newStage.label : '';
 
       // Optimistically update the UI
-      setLeads(prevLeads => 
-        prevLeads.map(l => 
-          String(l.id) === String(leadId) || l.id === leadId 
-            ? { ...l, stage_id: newStageId, stage_name: newStageName } 
+      setLeads(prevLeads =>
+        prevLeads.map(l =>
+          String(l.id) === String(leadId) || l.id === leadId
+            ? { ...l, stage_id: newStageId, stage_name: newStageName }
             : l
         )
       );
-      
+
       // Send stage_id update
       const response = await fetch(`${API_URL}/leads/${leadId}`, {
         method: 'PUT',
@@ -631,39 +644,43 @@ function Leads() {
   const filteredLeads = leads.filter(lead => {
     // First filter by pipeline - if pipeline is selected, only show leads from that pipeline
     if (selectedPipeline) {
-      // If lead has pipeline_id, it must match selected pipeline
-      if (lead.pipeline_id && String(lead.pipeline_id) !== String(selectedPipeline.id)) {
+      const leadPipelineId = lead.pipeline_id || lead.pipeline?.id;
+      // If lead has pipeline_id (or nested pipeline object), it must match selected pipeline
+      if (leadPipelineId && String(leadPipelineId) !== String(selectedPipeline.id)) {
         return false;
       }
-      // If lead has no pipeline_id but pipeline is selected, don't show it (strict filtering)
-      if (!lead.pipeline_id) {
+      // If lead has no pipeline info but pipeline is selected, don't show it (strict filtering)
+      if (!leadPipelineId) {
+        // Log this case as it might be why leads disappear
+        // console.log('Filtering out lead without pipeline_id:', lead.id);
         return false;
       }
     } else {
       // No pipeline selected - only show leads without pipeline_id (backward compatibility)
       // Or show all leads if you want, but typically we want to show only unassigned leads
-      if (lead.pipeline_id) {
+      const leadPipelineId = lead.pipeline_id || lead.pipeline?.id;
+      if (leadPipelineId) {
         return false; // Don't show leads assigned to pipelines when no pipeline is selected
       }
     }
-    
+
     // Then apply search filter
     const matchesSearch = lead.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          lead.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          lead.company?.toLowerCase().includes(searchTerm.toLowerCase());
-    
+      lead.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      lead.company?.toLowerCase().includes(searchTerm.toLowerCase());
+
     // Then apply status filter
     const matchesStatus = !filters.status || lead.status === filters.status || lead.stage_name === filters.status;
 
     // Contact filter matches lead.name/contact person
-    const matchesContact = !filters.contact 
+    const matchesContact = !filters.contact
       || (lead.name && lead.name === filters.contact)
       || (lead.email && lead.email === filters.contact)
       || (lead.company && lead.company === filters.contact);
 
     // Owner filter matches owner_id
     const matchesOwner = !filters.owner || String(lead.owner_id) === String(filters.owner);
-    
+
     return matchesSearch && matchesStatus && matchesContact && matchesOwner;
   });
 
@@ -671,22 +688,39 @@ function Leads() {
     setFilters(prev => ({ ...prev, [filterName]: value }));
   };
 
-  const getLeadsByStage = (stage) => {
+  const getLeadsByStage = (stage, allStages) => {
     const stageId = stage.stageId || stage.id;
     const stageName = (stage.name || stage.label || stage.id).toLowerCase();
-    
+    const isFirstStage = allStages && allStages.length > 0 && (String(allStages[0].id) === String(stage.id) || String(allStages[0].stageId) === String(stage.stageId));
+
     // filteredLeads already filters by pipeline, so we just need to match by stage
-    return filteredLeads.filter(lead => {
+    const matchedLeads = filteredLeads.filter((lead) => {
       // Match by stage_id if available (preferred method)
-      if (lead.stage_id) {
-        return String(lead.stage_id) === String(stageId);
+      const leadStageId = lead.stage_id || lead.pipeline_stage_id;
+
+      if (leadStageId) {
+        const isMatch = String(leadStageId) === String(stageId);
+        if (isMatch) return true;
+
+        // NEW: Handle Orphans
+        // If this lead has a stage_id that DOES NOT match any stage in the current pipeline,
+        // and we are currently rendering the FIRST stage, catch it here.
+        if (isFirstStage && allStages) {
+          const isOrphan = !allStages.some(s => String(s.id) === String(leadStageId) || String(s.stageId) === String(leadStageId));
+          if (isOrphan) {
+            return true;
+          }
+        }
+        return false;
       }
-      
+
       // Fallback: match by status/stage name (case insensitive) for backward compatibility
       // Only for leads without stage_id
       const leadStatus = (lead.status || lead.stage_name || '').toLowerCase();
-      return leadStatus === stageName;
+      const isNameMatch = leadStatus === stageName;
+      return isNameMatch;
     });
+    return matchedLeads;
   };
 
   const getTotalValue = (statusLeads) => {
@@ -709,7 +743,7 @@ function Leads() {
         <div className="leads-header">
           <div className="leads-header-left">
             <div className="view-toggles">
-              <button 
+              <button
                 type="button"
                 className={`view-toggle ${viewMode === 'Pipeline' ? 'active' : ''}`}
                 onClick={() => setViewMode('Pipeline')}
@@ -719,7 +753,7 @@ function Leads() {
                 </span>
                 <span>Pipeline</span>
               </button>
-              <button 
+              <button
                 type="button"
                 className={`view-toggle ${viewMode === 'List' ? 'active' : ''}`}
                 onClick={() => setViewMode('List')}
@@ -743,33 +777,33 @@ function Leads() {
             <button className="add-deal-btn-header" onClick={() => setShowAddModal(true)}>
               + Deal
             </button>
-          
+
           </div>
           <div className="leads-header-right">
-          <div className="action-buttons">
-                <button 
-                  type="button" 
-                  className={`action-btn ${isRefreshing ? 'refreshing' : ''}`} 
-                  onClick={() => fetchLeads()} 
-                  aria-label="Refresh leads"
-                  disabled={isRefreshing}
-                >
-                  <RefreshIcon />
-                </button>
-              </div>
-          <div className="export-row">
-            <div className="search-section-header">
-              <input
-                type="text"
-                className="search-input-header"
-                placeholder="Search Deals"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
+            <div className="action-buttons">
+              <button
+                type="button"
+                className={`action-btn ${isRefreshing ? 'refreshing' : ''}`}
+                onClick={() => fetchLeads()}
+                aria-label="Refresh leads"
+                disabled={isRefreshing}
+              >
+                <RefreshIcon />
+              </button>
             </div>
+            <div className="export-row">
+              <div className="search-section-header">
+                <input
+                  type="text"
+                  className="search-input-header"
+                  placeholder="Search Deals"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
             </div>
             <div className="filter-row">
-            
+
               <div className="pipeline-dropdown-wrapper" onClick={(e) => e.stopPropagation()}>
                 <button
                   className="filter-dropdown pipeline-dropdown-btn"
@@ -858,7 +892,7 @@ function Leads() {
                 ))}
               </select>
             </div>
-           
+
           </div>
         </div>
 
@@ -867,48 +901,48 @@ function Leads() {
           /* Kanban Board */
           <div className='leads-kanban-board'>
             <div className="kanban-board">
-            {stages.map((stage) => {
-              const stageLeads = getLeadsByStage(stage);
-              const totalValue = getTotalValue(stageLeads);
-              
-              return (
-                <DroppableColumn 
-                  key={stage.stageId || stage.id} 
-                  status={stage} 
-                  onDrop={handleDrop}
-                  onAddLead={() => setShowAddModal(true)}
-                >
-                  <div className="column-header">
-                    <div className="column-title">
-                      <span
-                        className="status-dot"
-                        style={{ backgroundColor: stage.color }}
-                        aria-hidden="true"
-                      />
-                      <span>{stage.label || stage.name}</span>
+              {stages.map((stage) => {
+                const stageLeads = getLeadsByStage(stage, stages);
+                const totalValue = getTotalValue(stageLeads);
+
+                return (
+                  <DroppableColumn
+                    key={stage.stageId || stage.id}
+                    status={stage}
+                    onDrop={handleDrop}
+                    onAddLead={() => setShowAddModal(true)}
+                  >
+                    <div className="column-header">
+                      <div className="column-title">
+                        <span
+                          className="status-dot"
+                          style={{ backgroundColor: stage.color }}
+                          aria-hidden="true"
+                        />
+                        <span>{stage.label || stage.name}</span>
+                      </div>
+                      <div className="column-stats">
+                        {stageLeads.length} Leads - {formatValue(totalValue)}
+                      </div>
+                      <div className="status-bar" style={{ backgroundColor: stage.color }}></div>
                     </div>
-                    <div className="column-stats">
-                      {stageLeads.length} Leads - {formatValue(totalValue)}
+
+                    <div className="column-content">
+                      {stageLeads.map((lead) => (
+                        <DraggableLeadCard
+                          key={lead.id}
+                          lead={lead}
+                          onDelete={() => handleDeleteLead(lead.id)}
+                          onEdit={() => openEditModal(lead)}
+                          onStatusChange={(newStageId) => handleDrop(lead.id, newStageId)}
+                        />
+                      ))}
                     </div>
-                    <div className="status-bar" style={{ backgroundColor: stage.color }}></div>
-                  </div>
-                  
-                  <div className="column-content">
-                    {stageLeads.map((lead) => (
-                    <DraggableLeadCard
-                      key={lead.id}
-                      lead={lead}
-                      onDelete={() => handleDeleteLead(lead.id)}
-                      onEdit={() => openEditModal(lead)}
-                      onStatusChange={(newStageId) => handleDrop(lead.id, newStageId)}
-                    />
-                    ))}
-                  </div>
-                </DroppableColumn>
-              );
-            })}
-          </div>
+                  </DroppableColumn>
+                );
+              })}
             </div>
+          </div>
         )}
 
         {viewMode === 'List' && (
@@ -936,99 +970,99 @@ function Leads() {
                   const isExpired = () => {
                     const closeDate = lead.expected_close_date || lead.expectedCloseDate;
                     if (!closeDate) return false;
-                    
+
                     const today = new Date();
                     today.setHours(0, 0, 0, 0);
                     const expiryDate = new Date(closeDate);
                     expiryDate.setHours(0, 0, 0, 0);
-                    
+
                     const isClosed = lead.status === 'won' || lead.status === 'Closed' || lead.status === 'closed';
                     return !isClosed && expiryDate < today;
                   };
-                  
+
                   const expired = isExpired();
-                  
+
                   return (
-                  <tr 
-                    key={lead.id} 
-                    onClick={() => navigate(`/leads/${lead.id}`)} 
-                    style={{ cursor: 'pointer' }}
-                    className={expired ? 'expired-lead-row' : ''}
-                  >
-                    <td><input type="checkbox" /></td>
-                    <td className="title-cell">
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <div className="deal-title">{lead.company || lead.name} Deal</div>
-                        {(lead.lead_type || lead.leadType) && (
-                          <span style={{ 
-                            fontSize: '0.75rem',
-                            padding: '2px 8px',
-                            borderRadius: '12px',
-                            backgroundColor: (lead.lead_type || lead.leadType) === 'hot' ? '#ea4335' : (lead.lead_type || lead.leadType) === 'warm' ? '#fbbc04' : '#1a73e8',
-                            color: 'white',
-                            fontWeight: '600'
-                          }}>
-                            {(lead.lead_type || lead.leadType) === 'hot' ? '🔥' : (lead.lead_type || lead.leadType) === 'warm' ? '🌤' : '❄️'} {(lead.lead_type || lead.leadType).charAt(0).toUpperCase() + (lead.lead_type || lead.leadType).slice(1)}
-                          </span>
-                        )}
-                      </div>
-                      <div className="deal-value">Value: ${lead.value || 0}</div>
-                    </td>
-                    <td>{lead.company || 'NA'}</td>
-                    <td>{lead.name}</td>
-                    <td>{lead.created_at ? new Date(lead.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A'}</td>
-                    <td>Default Pipeline</td>
-                    <td>
-                      <span className={`stage-pill ${lead.status.toLowerCase().replace(' ', '-')}`}>
-                        {lead.status}
-                      </span>
-                    </td>
-                    <td><span className="status-pill open">Open</span></td>
-                    <td className="activity-cell">
-                      <div className="activity-text">No recent activity</div>
-                      <div className="activity-date">Nov 3, 2025, 11:26 AM</div>
-                    </td>
-                    <td>
-                      <select className="owner-select">
-                        <option>Mike</option>
-                      </select>
-                    </td>
-                    <td style={{ position: 'relative' }}>
-                      <button 
-                        className="action-menu"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setOpenMenuId(openMenuId === lead.id ? null : lead.id);
-                        }}
-                      >
-                        ⋮
-                      </button>
-                      {openMenuId === lead.id && (
-                        <div className="list-action-menu" onClick={(e) => e.stopPropagation()}>
-                          <button 
-                            className="action-menu-item"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setOpenMenuId(null);
-                              openEditModal(lead);
-                            }}
-                          >
-                            Edit
-                          </button>
-                          <button 
-                            className="action-menu-item action-menu-delete"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setOpenMenuId(null);
-                              handleDeleteLead(lead.id);
-                            }}
-                          >
-                            Delete
-                          </button>
+                    <tr
+                      key={lead.id}
+                      onClick={() => navigate(`/leads/${lead.id}`)}
+                      style={{ cursor: 'pointer' }}
+                      className={expired ? 'expired-lead-row' : ''}
+                    >
+                      <td><input type="checkbox" /></td>
+                      <td className="title-cell">
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <div className="deal-title">{lead.company || lead.name} Deal</div>
+                          {(lead.lead_type || lead.leadType) && (
+                            <span style={{
+                              fontSize: '0.75rem',
+                              padding: '2px 8px',
+                              borderRadius: '12px',
+                              backgroundColor: (lead.lead_type || lead.leadType) === 'hot' ? '#ea4335' : (lead.lead_type || lead.leadType) === 'warm' ? '#fbbc04' : '#1a73e8',
+                              color: 'white',
+                              fontWeight: '600'
+                            }}>
+                              {(lead.lead_type || lead.leadType) === 'hot' ? '🔥' : (lead.lead_type || lead.leadType) === 'warm' ? '🌤' : '❄️'} {(lead.lead_type || lead.leadType).charAt(0).toUpperCase() + (lead.lead_type || lead.leadType).slice(1)}
+                            </span>
+                          )}
                         </div>
-                      )}
-                    </td>
-                  </tr>
+                        <div className="deal-value">Value: ${lead.value || 0}</div>
+                      </td>
+                      <td>{lead.company || 'NA'}</td>
+                      <td>{lead.name}</td>
+                      <td>{lead.created_at ? new Date(lead.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A'}</td>
+                      <td>Default Pipeline</td>
+                      <td>
+                        <span className={`stage-pill ${lead.status.toLowerCase().replace(' ', '-')}`}>
+                          {lead.status}
+                        </span>
+                      </td>
+                      <td><span className="status-pill open">Open</span></td>
+                      <td className="activity-cell">
+                        <div className="activity-text">No recent activity</div>
+                        <div className="activity-date">Nov 3, 2025, 11:26 AM</div>
+                      </td>
+                      <td>
+                        <select className="owner-select">
+                          <option>Mike</option>
+                        </select>
+                      </td>
+                      <td style={{ position: 'relative' }}>
+                        <button
+                          className="action-menu"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setOpenMenuId(openMenuId === lead.id ? null : lead.id);
+                          }}
+                        >
+                          ⋮
+                        </button>
+                        {openMenuId === lead.id && (
+                          <div className="list-action-menu" onClick={(e) => e.stopPropagation()}>
+                            <button
+                              className="action-menu-item"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setOpenMenuId(null);
+                                openEditModal(lead);
+                              }}
+                            >
+                              Edit
+                            </button>
+                            <button
+                              className="action-menu-item action-menu-delete"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setOpenMenuId(null);
+                                handleDeleteLead(lead.id);
+                              }}
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
                   );
                 })}
               </tbody>

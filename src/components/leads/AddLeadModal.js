@@ -104,7 +104,7 @@ function AddLeadModal({ onClose, onSave, initialData, isEditMode, selectedPipeli
           'Authorization': `Bearer ${token}`
         }
       });
-      
+
       if (response.ok) {
         const data = await response.json();
         if (data.pipeline && data.pipeline.stages) {
@@ -176,13 +176,13 @@ function AddLeadModal({ onClose, onSave, initialData, isEditMode, selectedPipeli
         } else {
           console.error('Failed to fetch organizations');
         }
-        
+
         // Fetch users for owner dropdown
         const usersResponse = await fetch(`${API_URL}/users`, { headers: authHeaders });
         if (usersResponse.ok) {
           const usersData = await usersResponse.json();
           setUsers(usersData.users || []);
-          
+
           // Set default owner to current user if not in edit mode
           if (!isEditMode && usersData.users && usersData.users.length > 0) {
             const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
@@ -199,7 +199,7 @@ function AddLeadModal({ onClose, onSave, initialData, isEditMode, selectedPipeli
           const pipelinesData = await pipelinesResponse.json();
           const pipelinesList = pipelinesData.pipelines || [];
           setPipelines(pipelinesList);
-          
+
           // Set default pipeline (from props or default pipeline or first pipeline)
           if (selectedPipeline) {
             setSelectedPipelineId(selectedPipeline.id);
@@ -217,7 +217,7 @@ function AddLeadModal({ onClose, onSave, initialData, isEditMode, selectedPipeli
         console.error('Error fetching options:', error);
       }
     };
-    
+
     fetchOptions();
   }, [isEditMode, selectedPipeline, selectedStageId]);
 
@@ -265,7 +265,7 @@ function AddLeadModal({ onClose, onSave, initialData, isEditMode, selectedPipeli
         emailType: 'Work',
         description: ''
       });
-      
+
       // Set pipeline and stage IDs if available
       if (initialData.pipeline_id) {
         setSelectedPipelineId(initialData.pipeline_id);
@@ -275,7 +275,7 @@ function AddLeadModal({ onClose, onSave, initialData, isEditMode, selectedPipeli
       if (initialData.stage_id) {
         setCurrentStageId(initialData.stage_id);
       }
-      
+
       // Reset the "Add New" states when modal opens
       setIsAddingContact(false);
       setIsAddingOrganization(false);
@@ -304,7 +304,7 @@ function AddLeadModal({ onClose, onSave, initialData, isEditMode, selectedPipeli
     e.preventDefault();
     setError('');
     setSaving(true);
-    
+
     try {
       // Map fields properly: name comes from contactPerson or title, company from organization
       const leadName = formData.contactPerson || formData.title || 'Untitled Deal';
@@ -326,7 +326,7 @@ function AddLeadModal({ onClose, onSave, initialData, isEditMode, selectedPipeli
         stage_id: currentStageId || selectedStageId || null,
         lead_type: formData.leadType || null
       };
-      
+
       console.log('[AddLeadModal] Sending leadData with lead_type:', leadData.lead_type, 'Full leadData:', leadData);
 
       await onSave(leadData);
@@ -341,15 +341,15 @@ function AddLeadModal({ onClose, onSave, initialData, isEditMode, selectedPipeli
   };
 
   // Use dynamic pipeline stages or fallback to empty array
-  const stages = pipelineStages.length > 0 
+  const stages = pipelineStages.length > 0
     ? pipelineStages.map(stage => ({
-        id: stage.id,
-        label: stage.name,
-        color: stage.color || '#1a73e8'
-      }))
+      id: stage.id,
+      label: stage.name,
+      color: stage.color || '#1a73e8'
+    }))
     : [];
 
-  const currentStageIndex = currentStageId 
+  const currentStageIndex = currentStageId
     ? stages.findIndex(s => s.id === currentStageId)
     : -1;
 
@@ -365,7 +365,7 @@ function AddLeadModal({ onClose, onSave, initialData, isEditMode, selectedPipeli
           {/* Lead Contact Detail Section */}
           <div className="form-section">
             <h3 className="section-title">Lead Contact Detail</h3>
-            
+
             <div className="form-row">
               <div className="form-group">
                 <label>Contact Person *</label>
@@ -377,9 +377,9 @@ function AddLeadModal({ onClose, onSave, initialData, isEditMode, selectedPipeli
                         <option key={index} value={contact}>{contact}</option>
                       ))}
                     </select>
-                    <button 
-                      type="button" 
-                      className="link-btn" 
+                    <button
+                      type="button"
+                      className="link-btn"
                       onClick={(e) => {
                         e.preventDefault();
                         setIsAddingContact(true);
@@ -390,7 +390,7 @@ function AddLeadModal({ onClose, onSave, initialData, isEditMode, selectedPipeli
                   </>
                 ) : (
                   <>
-                    <input 
+                    <input
                       type="text"
                       name="contactPerson"
                       value={formData.contactPerson}
@@ -398,9 +398,9 @@ function AddLeadModal({ onClose, onSave, initialData, isEditMode, selectedPipeli
                       placeholder="Enter contact person name"
                       required
                     />
-                    <button 
-                      type="button" 
-                      className="link-btn" 
+                    <button
+                      type="button"
+                      className="link-btn"
                       onClick={(e) => {
                         e.preventDefault();
                         setIsAddingContact(false);
@@ -423,9 +423,9 @@ function AddLeadModal({ onClose, onSave, initialData, isEditMode, selectedPipeli
                         <option key={index} value={org}>{org}</option>
                       ))}
                     </select>
-                    <button 
-                      type="button" 
-                      className="link-btn" 
+                    <button
+                      type="button"
+                      className="link-btn"
                       onClick={(e) => {
                         e.preventDefault();
                         setIsAddingOrganization(true);
@@ -437,7 +437,7 @@ function AddLeadModal({ onClose, onSave, initialData, isEditMode, selectedPipeli
                   </>
                 ) : (
                   <>
-                    <input 
+                    <input
                       type="text"
                       name="organization"
                       value={formData.organization}
@@ -445,9 +445,9 @@ function AddLeadModal({ onClose, onSave, initialData, isEditMode, selectedPipeli
                       placeholder="Enter organization name"
                       autoFocus
                     />
-                    <button 
-                      type="button" 
-                      className="link-btn" 
+                    <button
+                      type="button"
+                      className="link-btn"
                       onClick={(e) => {
                         e.preventDefault();
                         setIsAddingOrganization(false);
@@ -486,9 +486,9 @@ function AddLeadModal({ onClose, onSave, initialData, isEditMode, selectedPipeli
 
             <div className="form-group">
               <label>Lead Type</label>
-              <select 
-                name="leadType" 
-                value={formData.leadType} 
+              <select
+                name="leadType"
+                value={formData.leadType}
                 onChange={handleChange}
               >
                 <option value="">Select Lead Type (Optional)</option>
@@ -500,10 +500,10 @@ function AddLeadModal({ onClose, onSave, initialData, isEditMode, selectedPipeli
 
             <div className="form-group full-width">
               <label>Pipeline *</label>
-              <select 
-                name="pipeline" 
-                value={selectedPipelineId || ''} 
-                onChange={handlePipelineChange} 
+              <select
+                name="pipeline"
+                value={selectedPipelineId || ''}
+                onChange={handlePipelineChange}
                 required
               >
                 <option value="">Select a pipeline</option>
@@ -585,7 +585,7 @@ function AddLeadModal({ onClose, onSave, initialData, isEditMode, selectedPipeli
                       key={stage.id}
                       className={`stage-segment ${index <= currentStageIndex ? 'completed' : ''}`}
                       onClick={() => handleStageChange(stage.id, stage.label)}
-                      style={{ 
+                      style={{
                         backgroundColor: index <= currentStageIndex ? stage.color : '#e0e0e0',
                         color: index <= currentStageIndex ? '#fff' : '#666'
                       }}
@@ -648,7 +648,7 @@ function AddLeadModal({ onClose, onSave, initialData, isEditMode, selectedPipeli
           {/* Person Section */}
           <div className="form-section">
             <h3 className="section-title">Person</h3>
-            
+
             <div className="form-row">
               <div className="form-group">
                 <label>Phone</label>

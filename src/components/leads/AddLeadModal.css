@@ -18,6 +18,7 @@
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
@@ -54,6 +55,7 @@
     opacity: 0;
     transform: translateX(100%);
   }
+
   to {
     opacity: 1;
     transform: translateX(0);
@@ -65,6 +67,7 @@
     opacity: 0;
     transform: translateY(100%);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -230,7 +233,7 @@
   font-weight: 500;
 }
 
-.stage-segment + .stage-segment::before {
+.stage-segment+.stage-segment::before {
   content: '';
   position: absolute;
   left: 0;
@@ -327,4 +330,3 @@
     width: 95%;
   }
 }
-
