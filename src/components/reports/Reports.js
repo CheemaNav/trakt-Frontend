@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Reports.css';
+import useFetchWithPolling from '../../hooks/useFetchWithPolling';
+import { getAuthHeader } from '../../utils/auth';
+import { TableSkeleton, SummaryCardsSkeleton } from '../common/SkeletonLoader';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001/api';
 
@@ -46,10 +49,17 @@ const statusColors = {
 
 function Reports() {
   const navigate = useNavigate();
-  const [leads, setLeads] = useState([]);
+
+  // Use custom hook for polling data
+  const { data: leadsData, loading: leadsLoading, refresh: refreshLeads } = useFetchWithPolling(`${API_URL}/leads`);
+  const { data: usersData, loading: usersLoading, refresh: refreshUsers } = useFetchWithPolling(`${API_URL}/users`);
+
+  // Derived state
+  const leads = leadsData?.leads || [];
+  const users = usersData?.users || [];
+  const loading = leadsLoading || usersLoading;
+
   const [activities, setActivities] = useState({}); // Map of leadId -> latest activity
-  const [users, setUsers] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({
     owner: '',
     timePeriod: 'Yearly',
@@ -62,10 +72,6 @@ function Reports() {
   const [showPipelineDropdown, setShowPipelineDropdown] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
-
-  useEffect(() => {
-    fetchData();
-  }, []);
 
   useEffect(() => {
     const fetchActivitiesForLeads = async () => {
@@ -116,39 +122,6 @@ function Reports() {
     document.addEventListener('click', handleClickOutside);
     return () => document.removeEventListener('click', handleClickOutside);
   }, []);
-
-  const fetchData = async () => {
-    setLoading(true);
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        setLoading(false);
-        return;
-      }
-
-      // Fetch leads
-      const leadsResponse = await fetch(`${API_URL}/leads`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (leadsResponse.ok) {
-        const data = await leadsResponse.json();
-        setLeads(data.leads || []);
-      }
-
-      // Fetch users
-      const usersResponse = await fetch(`${API_URL}/users`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (usersResponse.ok) {
-        const data = await usersResponse.json();
-        setUsers(data.users || []);
-      }
-    } catch (error) {
-      console.error('Error fetching data:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const getOwnerName = (ownerId) => {
     const owner = users.find(u => u.id === ownerId);
@@ -243,8 +216,8 @@ function Reports() {
   const endIndex = startIndex + itemsPerPage;
   const currentPageLeads = filteredLeads.slice(startIndex, endIndex);
 
-  const handleRefresh = () => {
-    fetchData();
+  const handleRefresh = async () => {
+    await Promise.all([refreshLeads(), refreshUsers()]);
   };
 
   const handleFilterChange = (filterName, value) => {
@@ -440,7 +413,9 @@ function Reports() {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan="8" className="loading-cell">Loading deals...</td>
+                <td colSpan="8" style={{ padding: 0, border: 'none' }}>
+                  <TableSkeleton rows={6} columns={8} showCheckbox={false} showAvatar={false} />
+                </td>
               </tr>
             ) : currentPageLeads.length === 0 ? (
               <tr>

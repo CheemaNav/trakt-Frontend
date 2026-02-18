@@ -44,6 +44,8 @@ function Login() {
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
         navigate('/dashboard');
+      } else if (response.status === 403 && data.error?.toLowerCase().includes('verify')) {
+        setError('__verify_email__');
       } else {
         setError(data.error || 'Login failed');
       }
@@ -149,7 +151,35 @@ function Login() {
             <p>Sign in your account</p>
           </div>
 
-          {error && <div className="error-message">{error}</div>}
+          {error === '__verify_email__' ? (
+            <div className="verify-email-notice">
+              <div className="verify-email-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                  <polyline points="22,6 12,13 2,6"></polyline>
+                </svg>
+              </div>
+              <p className="verify-email-text">Your email isn't verified yet. Please verify your email to continue.</p>
+              <button
+                type="button"
+                className="verify-email-button"
+                onClick={async () => {
+                  try {
+                    await fetch(`${API_URL}/auth/resend-otp`, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ email: formData.email }),
+                    });
+                  } catch (e) { /* ignore, OTP screen handles errors */ }
+                  navigate('/verify-otp', { state: { email: formData.email } });
+                }}
+              >
+                Verify Email
+              </button>
+            </div>
+          ) : error ? (
+            <div className="error-message">{error}</div>
+          ) : null}
 
           <form onSubmit={handleSubmit} className="auth-form">
             <div className="form-group">

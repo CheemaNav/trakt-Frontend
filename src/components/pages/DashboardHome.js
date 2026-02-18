@@ -15,61 +15,37 @@ import {
   Legend,
   ResponsiveContainer
 } from 'recharts';
+import useFetchWithPolling from '../../hooks/useFetchWithPolling';
+import { getAuthHeader } from '../../utils/auth';
+import { DashboardSkeleton } from '../common/SkeletonLoader';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001/api';
 
 function DashboardHome({ user }) {
-  const [leads, setLeads] = useState([]);
-  const [loading, setLoading] = useState(true);
+  /* 
+   * Using custom hook for polling data every 5 seconds.
+   * This replaces the previous useEffect + fetch combination.
+   */
+  const { data, loading, error } = useFetchWithPolling(`${API_URL}/leads`);
+  const leads = data?.leads || [];
+
   const [leadsInStagesPeriod, setLeadsInStagesPeriod] = useState('Month');
   const [leadsTrendPeriod, setLeadsTrendPeriod] = useState('Month');
   const [revenuePeriod, setRevenuePeriod] = useState('Month');
 
+  // Log only initial load or errors to avoid console spam during polling
   useEffect(() => {
-    fetchLeads();
-  }, []);
-
-  const fetchLeads = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      
-      if (!token) {
-        console.error('No authentication token found');
-        setLoading(false);
-        return;
-      }
-
-      const response = await fetch(`${API_URL}/leads`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        console.log('Leads fetched successfully:', data.leads?.length || 0, 'leads');
-        setLeads(data.leads || []);
-      } else {
-        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-        console.error('Error fetching leads:', response.status, errorData);
-        
-        if (response.status === 401 || response.status === 403) {
-          // Token expired or invalid
-          localStorage.removeItem('token');
-          localStorage.removeItem('user');
-          window.location.href = '/login';
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching leads:', error);
-    } finally {
-      setLoading(false);
+    if (data?.leads) {
+      // console.log('Leads updated:', data.leads.length);
     }
-  };
+    if (error) {
+      console.error('Error fetching leads:', error);
+    }
+  }, [data, error]);
 
   // Calculate metrics dynamically from leads data
   const getTotalLeads = () => leads.length;
-  
+
   const getThisMonthLeads = () => {
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -85,7 +61,7 @@ function DashboardHome({ user }) {
   const getPipelinesWon = () => {
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    return leads.filter(lead => 
+    return leads.filter(lead =>
       lead.status === 'Closed' && new Date(lead.updated_at) >= startOfMonth
     ).length;
   };
@@ -93,7 +69,7 @@ function DashboardHome({ user }) {
   const getPipelinesLost = () => {
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    return leads.filter(lead => 
+    return leads.filter(lead =>
       lead.status === 'Lost' && new Date(lead.updated_at) >= startOfMonth
     ).length;
   };
@@ -142,7 +118,7 @@ function DashboardHome({ user }) {
   const getLeadsByStatus = (period) => {
     const now = new Date();
     let startDate;
-    
+
     if (period === 'Week') {
       startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
     } else if (period === 'Month') {
@@ -152,7 +128,7 @@ function DashboardHome({ user }) {
     }
 
     const filteredLeads = leads.filter(lead => new Date(lead.created_at) >= startDate);
-    
+
     const statusCounts = {
       'Not Contacted': 0,
       'Contacted': 0,
@@ -179,7 +155,7 @@ function DashboardHome({ user }) {
     const now = new Date();
     let startDate;
     let useMonthly = false;
-    
+
     if (period === 'Week') {
       startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
     } else if (period === 'Month') {
@@ -190,25 +166,25 @@ function DashboardHome({ user }) {
     }
 
     const filteredLeads = leads.filter(lead => new Date(lead.created_at) >= startDate);
-    
+
     const data = [];
     const currentDate = new Date(startDate);
-    
+
     while (currentDate <= now) {
       let dateStr;
       let endDate;
-      
+
       if (useMonthly) {
         dateStr = currentDate.toLocaleDateString('en-US', { month: 'short' });
         endDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1);
       } else {
-        dateStr = currentDate.toLocaleDateString('en-US', { 
-          month: 'short', 
-          day: 'numeric' 
+        dateStr = currentDate.toLocaleDateString('en-US', {
+          month: 'short',
+          day: 'numeric'
         });
         endDate = new Date(currentDate.getTime() + 24 * 60 * 60 * 1000);
       }
-      
+
       const count = filteredLeads.filter(lead => {
         const leadDate = new Date(lead.created_at);
         return leadDate >= currentDate && leadDate < endDate;
@@ -234,7 +210,7 @@ function DashboardHome({ user }) {
     const now = new Date();
     let startDate;
     let useMonthly = false;
-    
+
     if (period === 'Week') {
       startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
     } else if (period === 'Month') {
@@ -244,28 +220,28 @@ function DashboardHome({ user }) {
       useMonthly = true;
     }
 
-    const filteredLeads = leads.filter(lead => 
+    const filteredLeads = leads.filter(lead =>
       lead.status === 'Closed' && new Date(lead.updated_at) >= startDate
     );
-    
+
     const data = [];
     const currentDate = new Date(startDate);
-    
+
     while (currentDate <= now) {
       let dateStr;
       let endDate;
-      
+
       if (useMonthly) {
         dateStr = currentDate.toLocaleDateString('en-US', { month: 'short' });
         endDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1);
       } else {
-        dateStr = currentDate.toLocaleDateString('en-US', { 
-          month: 'short', 
-          day: 'numeric' 
+        dateStr = currentDate.toLocaleDateString('en-US', {
+          month: 'short',
+          day: 'numeric'
         });
         endDate = new Date(currentDate.getTime() + 24 * 60 * 60 * 1000);
       }
-      
+
       const revenue = filteredLeads
         .filter(lead => {
           const leadDate = new Date(lead.updated_at);
@@ -292,57 +268,60 @@ function DashboardHome({ user }) {
   const leadsTrendData = getLeadsTrendData(leadsTrendPeriod);
   const revenueTrendData = getRevenueTrendData(revenuePeriod);
 
+  if (loading && leads.length === 0) {
+    return (
+      <div className="dashboard-home">
+        <DashboardSkeleton />
+      </div>
+    );
+  }
+
   return (
     <div className="dashboard-home">
-      {/* <div className="dashboard-welcome">
-        <h1>Welcome back, {user.name?.split(' ')[0] || 'User'}! 👋</h1>
-        <p>Here's what's happening with your leads today.</p>
-      </div> */}
-
       <div className="metrics-grid">
-        <MetricCard 
+        <MetricCard
           title="Total Leads"
           value={totalLeads}
           change={0}
           changeType="positive"
           subtitle={`Total leads in pipeline`}
         />
-        <MetricCard 
+        <MetricCard
           title="This Month's Leads"
           value={thisMonthLeads}
           change={thisMonthChange}
           changeType={thisMonthChange >= 0 ? "positive" : "negative"}
           subtitle={`Last Month: ${lastMonthLeads}`}
         />
-        <MetricCard 
+        <MetricCard
           title="Contacts Created - This Month"
           value={contactsCreated}
           change={wonChange}
           changeType="positive"
           subtitle={`New contacts this month`}
         />
-        <MetricCard 
+        <MetricCard
           title="Pipelines Won - This Month"
           value={pipelinesWon}
           change={wonChange}
           changeType="positive"
           subtitle="Closed deals this month"
         />
-        <MetricCard 
+        <MetricCard
           title="Pipelines Lost - This Month"
           value={pipelinesLost}
           change={lostChange}
           changeType="positive"
           subtitle="Lost deals this month"
         />
-        <MetricCard 
+        <MetricCard
           title="Total Wins (All Time)"
           value={totalWonAllTime}
           change={0}
           changeType="positive"
           subtitle="All pipelines"
         />
-        <MetricCard 
+        <MetricCard
           title="Total Losses (All Time)"
           value={totalLostAllTime}
           change={0}
@@ -352,14 +331,14 @@ function DashboardHome({ user }) {
       </div>
 
       <div className="charts-grid">
-        <ChartCard 
+        <ChartCard
           title="Leads In Stages"
           period={leadsInStagesPeriod}
           onPeriodChange={setLeadsInStagesPeriod}
         >
           <LeadsInStagesChart data={leadsInStagesData} />
         </ChartCard>
-        <ChartCard 
+        <ChartCard
           title="Leads Trend"
           period={leadsTrendPeriod}
           onPeriodChange={setLeadsTrendPeriod}
@@ -370,7 +349,7 @@ function DashboardHome({ user }) {
       </div>
 
       <div className="bottom-grid">
-        <ChartCard 
+        <ChartCard
           title="Revenue Track"
           period={revenuePeriod}
           onPeriodChange={setRevenuePeriod}
@@ -404,19 +383,19 @@ function ChartCard({ title, children, period, onPeriodChange }) {
       <div className="chart-header">
         <h3>{title}</h3>
         <div className="chart-tabs">
-          <span 
+          <span
             className={`tab ${period === 'Week' ? 'active' : ''}`}
             onClick={() => onPeriodChange && onPeriodChange('Week')}
           >
             Week
           </span>
-          <span 
+          <span
             className={`tab ${period === 'Month' ? 'active' : ''}`}
             onClick={() => onPeriodChange && onPeriodChange('Month')}
           >
             Month
           </span>
-          <span 
+          <span
             className={`tab ${period === 'Year' ? 'active' : ''}`}
             onClick={() => onPeriodChange && onPeriodChange('Year')}
           >
@@ -474,10 +453,10 @@ function LeadsTrendChart({ data }) {
         <YAxis />
         <Tooltip />
         <Legend />
-        <Line 
-          type="monotone" 
-          dataKey="leads" 
-          stroke="#667eea" 
+        <Line
+          type="monotone"
+          dataKey="leads"
+          stroke="#667eea"
           strokeWidth={2}
           dot={{ fill: '#667eea', r: 4 }}
           activeDot={{ r: 6 }}
@@ -502,14 +481,14 @@ function RevenueTrendChart({ data }) {
         <CartesianGrid strokeDasharray="3 3" />
         <XAxis dataKey="date" />
         <YAxis />
-        <Tooltip 
+        <Tooltip
           formatter={(value) => `$${value.toLocaleString()}`}
         />
         <Legend />
-        <Line 
-          type="monotone" 
-          dataKey="revenue" 
-          stroke="#10b981" 
+        <Line
+          type="monotone"
+          dataKey="revenue"
+          stroke="#10b981"
           strokeWidth={2}
           dot={{ fill: '#10b981', r: 4 }}
           activeDot={{ r: 6 }}
@@ -602,8 +581,8 @@ function LatestActivityCard({ leads }) {
 
           const formatDate = (dateString) => {
             const date = new Date(dateString);
-            return date.toLocaleDateString('en-US', { 
-              month: 'short', 
+            return date.toLocaleDateString('en-US', {
+              month: 'short',
               day: 'numeric',
               hour: '2-digit',
               minute: '2-digit'

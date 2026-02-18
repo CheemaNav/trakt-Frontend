@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import useFetchWithPolling from '../../hooks/useFetchWithPolling';
 import './LeadDetail.css';
 import { History, Notes, Call, Files, Products, Gmail, Meetings } from './leadDetailTabs';
 
@@ -166,24 +167,34 @@ const TAB_CONFIG = [
 function LeadDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [lead, setLead] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('Timeline');
-  const [users, setUsers] = useState([]);
-  const [showOwnerDropdown, setShowOwnerDropdown] = useState(false);
-  const [updating, setUpdating] = useState(false);
-  const [notification, setNotification] = useState(null);
-  const [notes, setNotes] = useState([]);
-  const [pipelineStages, setPipelineStages] = useState([]);
-  const [showLostModal, setShowLostModal] = useState(false);
-  const [lostReason, setLostReason] = useState('');
-  const [lostSubmitting, setLostSubmitting] = useState(false);
+
+  // Only poll the lead itself - tab components fetch their own data internally
+  const { data: leadWrapper, loading: leadLoading, error: leadError, refresh: refreshLead } = useFetchWithPolling(`${API_URL}/leads/${id}`, 30000);
+
+  const lead = leadWrapper?.lead || null;
+  const loading = leadLoading;
+
+  // Tab counts - updated by child component callbacks
   const [tabCounts, setTabCounts] = useState({
     Notes: 0,
     Call: 0,
     Files: 0,
-    Products: 0
+    Products: 0,
+    Gmail: 0,
+    Timeline: 0,
+    Meetings: 0
   });
+
+  const [activeTab, setActiveTab] = useState('Timeline');
+  const [mountedTabs, setMountedTabs] = useState(new Set(['Timeline']));
+  const [users, setUsers] = useState([]);
+  const [showOwnerDropdown, setShowOwnerDropdown] = useState(false);
+  const [updating, setUpdating] = useState(false);
+  const [notification, setNotification] = useState(null);
+  const [pipelineStages, setPipelineStages] = useState([]);
+  const [showLostModal, setShowLostModal] = useState(false);
+  const [lostReason, setLostReason] = useState('');
+  const [lostSubmitting, setLostSubmitting] = useState(false);
   const [isSummaryEditing, setIsSummaryEditing] = useState(false);
   const [summaryForm, setSummaryForm] = useState({
     value: '',
@@ -195,11 +206,51 @@ function LeadDetail() {
   });
 
   useEffect(() => {
-    fetchLead();
     fetchUsers();
-    fetchNotes();
-    fetchTabCounts();
   }, []);
+
+  // Fetch tab counts on mount (lightweight - just counts, no full tab mounting)
+  useEffect(() => {
+    if (!id) return;
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    const headers = { 'Authorization': `Bearer ${token}` };
+    const fetchCount = async (url, key) => {
+      try {
+        const res = await fetch(url, { headers });
+        if (res.ok) {
+          const data = await res.json();
+          const arr = data[key] || [];
+          return Array.isArray(arr) ? arr.length : 0;
+        }
+      } catch (e) { /* ignore */ }
+      return 0;
+    };
+
+    Promise.all([
+      fetchCount(`${API_URL}/leads/${id}/notes`, 'notes'),
+      fetchCount(`${API_URL}/leads/${id}/calls`, 'calls'),
+      fetchCount(`${API_URL}/leads/${id}/files`, 'files'),
+      fetchCount(`${API_URL}/leads/${id}/products`, 'products'),
+      fetchCount(`${API_URL}/leads/${id}/emails`, 'emails'),
+    ]).then(([notes, calls, files, products, emails]) => {
+      setTabCounts(prev => ({ ...prev, Notes: notes, Call: calls, Files: files, Products: products, Gmail: emails }));
+    });
+  }, [id]);
+
+  // Handle lead errors
+  useEffect(() => {
+    if (leadError) {
+      if (leadError.status === 404) {
+        setNotification({ type: 'error', message: 'Lead not found' });
+        setTimeout(() => navigate('/leads'), 2000);
+      } else if (leadError.status === 401) {
+        navigate('/login');
+      } else {
+        setNotification({ type: 'error', message: leadError.message || 'Failed to fetch lead' });
+      }
+    }
+  }, [leadError, navigate]);
 
   useEffect(() => {
     if (lead) {
@@ -214,13 +265,7 @@ function LeadDetail() {
     }
   }, [lead]);
 
-  // Refresh tab counts periodically
-  useEffect(() => {
-    const interval = setInterval(() => {
-      fetchTabCounts();
-    }, 5000);
-    return () => clearInterval(interval);
-  }, [id]);
+
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -252,7 +297,7 @@ function LeadDetail() {
           'Authorization': `Bearer ${token}`
         }
       });
-      
+
       if (response.ok) {
         const data = await response.json();
         setUsers(data.users || []);
@@ -262,142 +307,13 @@ function LeadDetail() {
     }
   };
 
-  const fetchNotes = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_URL}/leads/${id}/notes`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        const fetchedNotes = data.notes || [];
-        setNotes(fetchedNotes);
-        // Update tab count
-        setTabCounts(prev => ({ ...prev, Notes: fetchedNotes.length }));
-      }
-    } catch (error) {
-      console.error('Error fetching notes:', error);
-    }
-  };
 
-  const fetchTabCounts = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) return;
 
-      // Fetch notes count
-      const notesResponse = await fetch(`${API_URL}/leads/${id}/notes`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (notesResponse.ok) {
-        const notesData = await notesResponse.json();
-        setTabCounts(prev => ({ ...prev, Notes: notesData.notes?.length || 0 }));
-      }
 
-      // Fetch calls count (if endpoint exists)
-      try {
-        const callsResponse = await fetch(`${API_URL}/leads/${id}/calls`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        if (callsResponse.ok) {
-          const callsData = await callsResponse.json();
-          setTabCounts(prev => ({ ...prev, Call: callsData.calls?.length || 0 }));
-        }
-      } catch (e) {
-        // Endpoint might not exist yet
-      }
 
-      // Fetch files count (if endpoint exists)
-      try {
-        const filesResponse = await fetch(`${API_URL}/leads/${id}/files`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        if (filesResponse.ok) {
-          const filesData = await filesResponse.json();
-          setTabCounts(prev => ({ ...prev, Files: filesData.files?.length || 0 }));
-        }
-      } catch (e) {
-        // Endpoint might not exist yet
-      }
 
-      // Fetch products count (if endpoint exists)
-      try {
-        const productsResponse = await fetch(`${API_URL}/leads/${id}/products`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        if (productsResponse.ok) {
-          const productsData = await productsResponse.json();
-          setTabCounts(prev => ({ ...prev, Products: productsData.products?.length || 0 }));
-        }
-      } catch (e) {
-        // Endpoint might not exist yet
-      }
 
-      // Fetch emails count (if Gmail is connected)
-      try {
-        const emailsResponse = await fetch(`${API_URL}/leads/${id}/emails`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        if (emailsResponse.ok) {
-          const emailsData = await emailsResponse.json();
-          setTabCounts(prev => ({ ...prev, Gmail: emailsData.emails?.length || 0 }));
-        }
-      } catch (e) {
-        // Gmail not connected or endpoint error
-      }
-    } catch (error) {
-      console.error('Error fetching tab counts:', error);
-    }
-  };
 
-  // Expose refresh function globally for Notes component
-  useEffect(() => {
-    window.refreshLeadNotes = fetchNotes;
-    return () => {
-      delete window.refreshLeadNotes;
-    };
-  }, [id]);
-
-  const fetchLead = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_URL}/leads/${id}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setLead(data.lead);
-      } else if (response.status === 404) {
-        setNotification({
-          type: 'error',
-          message: 'Lead not found'
-        });
-        setTimeout(() => navigate('/leads'), 2000);
-      } else if (response.status === 401) {
-        navigate('/login');
-      } else {
-        const error = await response.json();
-        setNotification({
-          type: 'error',
-          message: error.error || 'Failed to fetch lead'
-        });
-      }
-    } catch (error) {
-      console.error('Error fetching lead:', error);
-      setNotification({
-        type: 'error',
-        message: 'Error loading lead. Please try again.'
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const fetchPipelineStages = async (pipelineId) => {
     try {
@@ -436,24 +352,24 @@ function LeadDetail() {
   const formatDate = (dateString) => {
     if (!dateString) return '';
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { 
-      year: 'numeric', 
-      month: 'short', 
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
       day: 'numeric',
       hour: '2-digit',
       minute: '2-digit'
     });
   };
 
-const formatShortDate = (dateString) => {
-  if (!dateString) return 'Not set';
-  const date = new Date(dateString);
-  return date.toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  });
-};
+  const formatShortDate = (dateString) => {
+    if (!dateString) return 'Not set';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+  };
 
 
   const formatValue = (value, currency = 'USD') => {
@@ -497,13 +413,16 @@ const formatShortDate = (dateString) => {
         },
         body: JSON.stringify(updates)
       });
-      
+
       if (response.ok) {
         const data = await response.json();
         if (data.lead) {
           // Preserve the stage the user selected for UI even if backend normalizes status
           const mergedLead = { ...data.lead, status: updates.status || data.lead.status };
-          setLead(mergedLead);
+          // Preserve the stage the user selected for UI even if backend normalizes status
+          // const mergedLead = { ...data.lead, status: updates.status || data.lead.status };
+          // setLead(mergedLead); // Replaced by independent polling refresh
+          await refreshLead();
           if (showNotification && updates.status) {
             const statusMap = {
               'Closed': 'won',
@@ -517,7 +436,7 @@ const formatShortDate = (dateString) => {
             });
           }
         } else {
-          fetchLead(); // Refresh if lead not in response
+          await refreshLead(); // Refresh if lead not in response
         }
         return true;
       } else {
@@ -617,14 +536,14 @@ const formatShortDate = (dateString) => {
     try {
       const token = localStorage.getItem('token');
       console.log('[LeadDetail] Deleting lead:', id);
-      
+
       const response = await fetch(`${API_URL}/leads/${id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
-      
+
       if (response.ok) {
         const data = await response.json();
         console.log('[LeadDetail] Lead deleted successfully:', data);
@@ -662,6 +581,8 @@ const formatShortDate = (dateString) => {
     const success = await updateLead(updates);
     if (success) {
       setIsSummaryEditing(false);
+      // Force refresh to pick up latest data
+      await refreshLead();
     }
   };
 
@@ -729,17 +650,8 @@ const formatShortDate = (dateString) => {
     return normalizedStatus === 'lost' || normalizedStatus === 'trashed' || normalizedStageName === 'lost';
   };
 
-  // Build history items from lead data and notes
+  // Build history items from lead data
   const historyItems = [
-    // Add notes as history items
-    ...notes.map((note) => ({
-      id: `note-${note.id}`,
-      title: `Note: ${note.content.length > 50 ? note.content.substring(0, 50) + '...' : note.content}`,
-      timestamp: formatDate(note.created_at),
-      user: note.user_name || 'You',
-      type: 'note',
-      fullContent: note.content
-    })),
     // Add stage change if updated
     ...(lead.updated_at && lead.updated_at !== lead.created_at ? [{
       id: 'stage-change',
@@ -767,18 +679,17 @@ const formatShortDate = (dateString) => {
   const tabContent = {
     Timeline: <History leadId={id} />,
     Notes: <Notes leadId={id} onNotesChange={(updatedNotes) => {
-      setNotes(updatedNotes);
-      setTabCounts(prev => ({ ...prev, Notes: updatedNotes.length }));
+      setTabCounts(prev => ({ ...prev, Notes: Array.isArray(updatedNotes) ? updatedNotes.length : 0 }));
     }} />,
     Call: <Call leadId={id} onCallsChange={(updatedCalls) => {
-      setTabCounts(prev => ({ ...prev, Call: updatedCalls.length }));
+      setTabCounts(prev => ({ ...prev, Call: Array.isArray(updatedCalls) ? updatedCalls.length : 0 }));
     }} />,
     Files: <Files leadId={id} onFilesChange={(updatedFiles) => {
-      setTabCounts(prev => ({ ...prev, Files: updatedFiles.length }));
+      setTabCounts(prev => ({ ...prev, Files: Array.isArray(updatedFiles) ? updatedFiles.length : 0 }));
     }} />,
     Products: <Products leadId={id} />,
     Gmail: <Gmail leadId={id} onEmailsChange={(emailCount) => {
-      setTabCounts(prev => ({ ...prev, Gmail: emailCount }));
+      setTabCounts(prev => ({ ...prev, Gmail: typeof emailCount === 'number' ? emailCount : 0 }));
     }} />,
     Meetings: <Meetings leadEmail={lead?.email} leadName={lead?.name} leadId={id} />
   };
@@ -805,35 +716,35 @@ const formatShortDate = (dateString) => {
       value: summaryForm.name || 'Add contact',
       subitems: isSummaryEditing
         ? [
-            <input
-              key="name"
-              type="text"
-              value={summaryForm.name}
-              onChange={(e) => handleSummaryFieldChange('name', e.target.value)}
-              placeholder="Name"
-              className="summary-input"
-            />,
-            <input
-              key="email"
-              type="email"
-              value={summaryForm.email}
-              onChange={(e) => handleSummaryFieldChange('email', e.target.value)}
-              placeholder="Email"
-              className="summary-input"
-            />,
-            <input
-              key="phone"
-              type="tel"
-              value={summaryForm.phone}
-              onChange={(e) => handleSummaryFieldChange('phone', e.target.value)}
-              placeholder="Phone"
-              className="summary-input"
-            />
-          ]
+          <input
+            key="name"
+            type="text"
+            value={summaryForm.name}
+            onChange={(e) => handleSummaryFieldChange('name', e.target.value)}
+            placeholder="Name"
+            className="summary-input"
+          />,
+          <input
+            key="email"
+            type="email"
+            value={summaryForm.email}
+            onChange={(e) => handleSummaryFieldChange('email', e.target.value)}
+            placeholder="Email"
+            className="summary-input"
+          />,
+          <input
+            key="phone"
+            type="tel"
+            value={summaryForm.phone}
+            onChange={(e) => handleSummaryFieldChange('phone', e.target.value)}
+            placeholder="Phone"
+            className="summary-input"
+          />
+        ]
         : [
-            summaryForm.email ? <a key="email" href={`mailto:${summaryForm.email}`}>{summaryForm.email}</a> : 'No email',
-            summaryForm.phone ? <a key="phone" href={`tel:${summaryForm.phone}`}>{summaryForm.phone}</a> : 'No phone',
-          ],
+          summaryForm.email ? <a key="email" href={`mailto:${summaryForm.email}`}>{summaryForm.email}</a> : 'No email',
+          summaryForm.phone ? <a key="phone" href={`tel:${summaryForm.phone}`}>{summaryForm.phone}</a> : 'No phone',
+        ],
     },
     {
       icon: BuildingIcon,
@@ -902,9 +813,6 @@ const formatShortDate = (dateString) => {
       <div className="deal-page">
         <header className="deal-header">
           <div className="deal-header-left">
-            <button className="back-btn" onClick={() => navigate('/leads')} aria-label="Back to leads">
-              <BackArrowIcon />
-            </button>
             <div className="deal-title-group">
               <h1>{lead.title || lead.name || lead.company || 'Untitled Deal'}</h1>
               <div className="deal-meta">
@@ -1093,7 +1001,7 @@ const formatShortDate = (dateString) => {
                 <button
                   key={id}
                   className={`tab-btn ${activeTab === id ? 'active' : ''}`}
-                  onClick={() => setActiveTab(id)}
+                  onClick={() => { setActiveTab(id); setMountedTabs(prev => new Set(prev).add(id)); }}
                 >
                   <Icon />
                   <span>{label}</span>
@@ -1108,7 +1016,7 @@ const formatShortDate = (dateString) => {
                   style={{ display: activeTab === tabId ? 'block' : 'none', height: '100%' }}
                   className={`tab-content-item${activeTab === tabId ? ' active' : ''}`}
                 >
-                  {content}
+                  {mountedTabs.has(tabId) ? content : null}
                 </div>
               ))}
             </div>

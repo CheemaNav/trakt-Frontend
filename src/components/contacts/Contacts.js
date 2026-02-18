@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './Contacts.css';
+import { TableSkeleton } from '../common/SkeletonLoader';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001/api';
 
@@ -139,7 +140,7 @@ function Contacts() {
       const nameParts = (lead.name || '').split(' ');
       const firstName = nameParts[0] || '';
       const lastName = nameParts.slice(1).join(' ') || '';
-      
+
       return {
         id: `lead-${lead.id}`,
         type: 'lead',
@@ -166,7 +167,7 @@ function Contacts() {
     leadsList.forEach(lead => {
       const emailExists = lead.email && existingEmails.has(lead.email);
       const phoneExists = lead.phone && existingPhones.has(lead.phone);
-      
+
       if (!emailExists && !phoneExists) {
         combined.push(lead);
         if (lead.email) existingEmails.add(lead.email);
@@ -243,8 +244,8 @@ function Contacts() {
   };
 
   const handleSelectContact = (contactId) => {
-    setSelectedContacts(prev => 
-      prev.includes(contactId) 
+    setSelectedContacts(prev =>
+      prev.includes(contactId)
         ? prev.filter(id => id !== contactId)
         : [...prev, contactId]
     );
@@ -252,12 +253,12 @@ function Contacts() {
 
   const handleViewContact = async (contact) => {
     setSelectedContact(contact);
-    
+
     // If it's a lead-based contact, get all deals for this lead
     if (contact.type === 'lead' && contact.lead_id) {
       // Get the specific lead and all leads with same email/phone
-      const relatedDeals = leads.filter(lead => 
-        lead.id === contact.lead_id || 
+      const relatedDeals = leads.filter(lead =>
+        lead.id === contact.lead_id ||
         (contact.email && lead.email === contact.email) ||
         (contact.phone && lead.phone === contact.phone)
       );
@@ -279,7 +280,7 @@ function Contacts() {
       } catch (error) {
         console.error('Error fetching contact deals:', error);
         // Fallback: find leads by email/phone
-        const relatedDeals = leads.filter(lead => 
+        const relatedDeals = leads.filter(lead =>
           (contact.email && lead.email === contact.email) ||
           (contact.phone && lead.phone === contact.phone)
         );
@@ -367,7 +368,9 @@ function Contacts() {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan="6" className="loading-cell">Loading contacts...</td>
+                <td colSpan="6" style={{ padding: 0, border: 'none' }}>
+                  <TableSkeleton rows={6} columns={5} showCheckbox={true} showAvatar={true} />
+                </td>
               </tr>
             ) : currentPageContacts.length === 0 ? (
               <tr>
@@ -385,7 +388,7 @@ function Contacts() {
                   </td>
                   <td>
                     <div className="contact-name">
-                      <div 
+                      <div
                         className="contact-avatar"
                         style={{ backgroundColor: getAvatarColor(contact.name || `${contact.first_name} ${contact.last_name}`) }}
                       >
@@ -404,7 +407,7 @@ function Contacts() {
                   <td>
                     {contact.owner_id ? (
                       <div className="owner-cell">
-                        <div 
+                        <div
                           className="owner-avatar"
                           style={{ backgroundColor: getAvatarColor(getOwnerName(contact.owner_id)) }}
                         >
@@ -433,7 +436,7 @@ function Contacts() {
           Showing {filteredContacts.length === 0 ? 0 : startIndex + 1} to {Math.min(endIndex, filteredContacts.length)} of {filteredContacts.length} entries
         </div>
         <div className="contacts-pagination">
-          <button 
+          <button
             className="pagination-btn"
             disabled={currentPage === 1}
             onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
@@ -449,7 +452,7 @@ function Contacts() {
               {page}
             </button>
           ))}
-          <button 
+          <button
             className="pagination-btn"
             disabled={currentPage === totalPages || totalPages === 0}
             onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
@@ -563,7 +566,7 @@ function Contacts() {
             <div className="contact-detail-content">
               <div className="contact-info-section">
                 <div className="contact-header-info">
-                  <div 
+                  <div
                     className="contact-detail-avatar"
                     style={{ backgroundColor: getAvatarColor(selectedContact.name || `${selectedContact.first_name} ${selectedContact.last_name}`) }}
                   >

@@ -65,10 +65,10 @@ function Meetings({ leadEmail, leadName, leadId }) {
 
   useEffect(() => {
     fetchMeetings();
-  }, [leadEmail]);
+  }, [leadEmail, leadId]);
 
   const fetchMeetings = async () => {
-    if (!leadEmail) {
+    if (!leadEmail && !leadId) {
       setLoading(false);
       return;
     }
@@ -85,10 +85,16 @@ function Meetings({ leadEmail, leadName, leadId }) {
 
       if (response.ok) {
         const data = await response.json();
-        // Filter meetings that include the lead's email
+        // Filter meetings that include the lead's email or leadId
         const leadMeetings = (data.events || []).filter(event => {
+          // Check if leadId matches
+          if (leadId && event.leadId && String(event.leadId) === String(leadId)) {
+            return true;
+          }
+
+          // Check if leadEmail is an attendee
           const attendees = event.attendees || [];
-          return attendees.some(attendee => 
+          return leadEmail && attendees.some(attendee =>
             attendee.email && attendee.email.toLowerCase() === leadEmail.toLowerCase()
           );
         });
@@ -114,7 +120,7 @@ function Meetings({ leadEmail, leadName, leadId }) {
     // Validate that end time is after start time
     const startDate = new Date(formData.startTime);
     const endDate = new Date(formData.endTime);
-    
+
     if (endDate <= startDate) {
       toast.error('End time must be after start time');
       return;
@@ -137,7 +143,10 @@ function Meetings({ leadEmail, leadName, leadId }) {
           endTime: formData.endTime,
           attendees: attendeesArray,
           timezone: formData.timezone,
-          reminderMinutes: parseInt(formData.reminderMinutes)
+          reminderMinutes: parseInt(formData.reminderMinutes),
+          leadId: leadId,
+          leadName: leadName,
+          provider: 'google'
         })
       });
 
@@ -196,25 +205,38 @@ function Meetings({ leadEmail, leadName, leadId }) {
   };
 
   const formatDate = (dateString) => {
+    if (!dateString) return '';
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { 
-      month: 'short', 
-      day: 'numeric', 
-      year: 'numeric' 
+    if (isNaN(date.getTime())) return '';
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
     });
   };
 
   const formatTime = (dateString) => {
+    if (!dateString) return '';
     const date = new Date(dateString);
-    return date.toLocaleTimeString('en-US', { 
-      hour: 'numeric', 
+    if (isNaN(date.getTime())) return '';
+    return date.toLocaleTimeString('en-US', {
+      hour: 'numeric',
       minute: '2-digit',
-      hour12: true 
+      hour12: true
     });
   };
 
   const isPastMeeting = (endTime) => {
     return new Date(endTime) < new Date();
+  };
+
+  const getEventStart = (meeting) => {
+    // console.log('Checking start time for:', meeting);
+    return meeting.start?.dateTime || meeting.start?.date || meeting.startTime || meeting.start_time;
+  };
+
+  const getEventEnd = (meeting) => {
+    return meeting.end?.dateTime || meeting.end?.date || meeting.endTime || meeting.end_time;
   };
 
   const isUpcomingMeeting = (startTime) => {
@@ -260,51 +282,54 @@ function Meetings({ leadEmail, leadName, leadId }) {
         </div>
       ) : (
         <div className="meetings-list">
-          {meetings.map((meeting) => (
-            <div 
-              key={meeting.id} 
-              className={`meeting-card ${isPastMeeting(meeting.end.dateTime) ? 'past' : ''}`}
-            >
-              <div className="meeting-header">
-                <h4>{meeting.summary}</h4>
-                {isUpcomingMeeting(meeting.start.dateTime) && (
-                  <span className="meeting-badge upcoming">Upcoming</span>
+          {meetings.map((meeting) => {
+            console.log('Rendering meeting:', meeting);
+            return (
+              <div
+                key={meeting.id}
+                className={`meeting-card ${isPastMeeting(getEventEnd(meeting)) ? 'past' : ''}`}
+              >
+                <div className="meeting-header">
+                  <h4>{meeting.summary}</h4>
+                  {isUpcomingMeeting(getEventStart(meeting)) && (
+                    <span className="meeting-badge upcoming">Upcoming</span>
+                  )}
+                  {isPastMeeting(getEventEnd(meeting)) && (
+                    <span className="meeting-badge past">Completed</span>
+                  )}
+                </div>
+
+                <div className="meeting-details">
+                  <div className="meeting-detail-row">
+                    <CalendarIcon width="16" height="16" />
+                    <span>{formatDate(getEventStart(meeting))}</span>
+                  </div>
+                  <div className="meeting-detail-row">
+                    <ClockIcon width="16" height="16" />
+                    <span>
+                      {formatTime(getEventStart(meeting))} - {formatTime(getEventEnd(meeting))}
+                    </span>
+                  </div>
+                </div>
+
+                {meeting.description && (
+                  <p className="meeting-description">{meeting.description}</p>
                 )}
-                {isPastMeeting(meeting.end.dateTime) && (
-                  <span className="meeting-badge past">Completed</span>
+
+                {meeting.hangoutLink && isUpcomingMeeting(getEventStart(meeting)) && (
+                  <a
+                    href={meeting.hangoutLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="join-meeting-btn"
+                  >
+                    <VideoIcon width="16" height="16" />
+                    Join Meeting
+                  </a>
                 )}
               </div>
-              
-              <div className="meeting-details">
-                <div className="meeting-detail-row">
-                  <CalendarIcon width="16" height="16" />
-                  <span>{formatDate(meeting.start.dateTime)}</span>
-                </div>
-                <div className="meeting-detail-row">
-                  <ClockIcon width="16" height="16" />
-                  <span>
-                    {formatTime(meeting.start.dateTime)} - {formatTime(meeting.end.dateTime)}
-                  </span>
-                </div>
-              </div>
-
-              {meeting.description && (
-                <p className="meeting-description">{meeting.description}</p>
-              )}
-
-              {meeting.hangoutLink && isUpcomingMeeting(meeting.start.dateTime) && (
-                <a 
-                  href={meeting.hangoutLink} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="join-meeting-btn"
-                >
-                  <VideoIcon width="16" height="16" />
-                  Join Meeting
-                </a>
-              )}
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
@@ -334,7 +359,7 @@ function Meetings({ leadEmail, leadName, leadId }) {
                   </div>
                 </div>
               )}
-              
+
               {/* Meeting Title */}
               <div className="create-form-field">
                 <label className="create-label">

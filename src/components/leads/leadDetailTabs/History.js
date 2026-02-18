@@ -14,19 +14,12 @@ function History({ leadId }) {
       return;
     }
     fetchActivities();
-    // Refresh activities every 5 seconds
-    const interval = setInterval(() => {
-      if (leadId) {
-        fetchActivities();
-      }
-    }, 5000);
-    return () => clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [leadId]);
 
   const fetchActivities = async () => {
     if (!leadId) return;
-    
+
     try {
       const token = localStorage.getItem('token');
       if (!token) {
@@ -98,7 +91,8 @@ function History({ leadId }) {
   };
 
   const getActivityIcon = (activityType, action) => {
-    if (activityType === 'note') {
+    const type = (activityType || '').toLowerCase();
+    if (type === 'note' || type === 'to-do') {
       if (action === 'Note deleted') {
         return (
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -117,7 +111,7 @@ function History({ leadId }) {
         </svg>
       );
     }
-    if (activityType === 'stage') {
+    if (type === 'stage') {
       return (
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <path d="M3 3h18v4H3z"></path>
@@ -127,7 +121,7 @@ function History({ leadId }) {
         </svg>
       );
     }
-    if (activityType === 'field_update') {
+    if (type === 'field_update') {
       return (
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <rect x="3" y="3" width="18" height="18" rx="2"></rect>
@@ -135,14 +129,22 @@ function History({ leadId }) {
         </svg>
       );
     }
-    if (activityType === 'call') {
+    if (type === 'call') {
       return (
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <path d="M22 16.92v3a2 2 0 0 1-2.18 2A19.79 19.79 0 0 1 8.63 19 19.5 19.5 0 0 1 2.6 12.4a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 1.53 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L5.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7 2 2 0 0 1 1.72 2Z"></path>
         </svg>
       );
     }
-    if (activityType === 'file') {
+    if (type === 'email') {
+      return (
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+          <polyline points="22,6 12,13 2,6"></polyline>
+        </svg>
+      );
+    }
+    if (type === 'file') {
       return (
         <div className="file-upload-icon">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -160,26 +162,25 @@ function History({ leadId }) {
   };
 
   const formatActivityDetails = (activity) => {
-    if (activity.activity_type === 'stage') {
-      return activity.details || `'${activity.old_value}' to '${activity.new_value}'`;
-    }
-    if (activity.activity_type === 'field_update') {
-      const fieldNames = activity.details ? activity.details.split(', ').map(d => {
-        const parts = d.split(':');
-        return parts[0];
-      }).join(', ') : 'Fields';
-      return activity.details || `${fieldNames} updated`;
-    }
-    if (activity.activity_type === 'note') {
-      return activity.details || activity.action;
-    }
-    return activity.details || activity.action;
-  };
+      const type = (activity.activity_type || '').toLowerCase();
+      if (type === 'stage') {
+        return activity.note || activity.details || `'${activity.old_value}' to '${activity.new_value}'`;
+      }
+      if (type === 'field_update') {
+        const fieldNames = activity.details ? activity.details.split(', ').map(d => {
+          const parts = d.split(':');
+          return parts[0];
+        }).join(', ') : 'Fields';
+        return activity.note || activity.details || `${fieldNames} updated`;
+      }
+      return activity.note || activity.details || activity.summary || activity.action || '';
+    };
 
   const filteredActivities = activities.filter(activity => {
     if (filter === 'all') return true;
-    if (filter === 'notes') return activity.activity_type === 'note';
-    if (filter === 'activities') return activity.activity_type !== 'note';
+    const type = (activity.activity_type || '').toLowerCase();
+    if (filter === 'notes') return type === 'note' || type === 'to-do';
+    if (filter === 'activities') return type !== 'note' && type !== 'to-do';
     return true;
   });
 
@@ -221,8 +222,8 @@ function History({ leadId }) {
     <div className="timeline-panel">
       <div className="timeline-toolbar">
         <h2>History</h2>
-        <select 
-          className="timeline-filter" 
+        <select
+          className="timeline-filter"
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
         >
@@ -239,7 +240,7 @@ function History({ leadId }) {
                 <div className="timeline-date-dot"></div>
                 <span className="timeline-date-label">{dateLabel}</span>
               </div>
-        <ul className="timeline-list">
+              <ul className="timeline-list">
                 {groupedActivities[dateLabel].map((activity) => (
                   <li key={activity.id} className="timeline-entry">
                     <div className="timeline-marker">
@@ -247,23 +248,23 @@ function History({ leadId }) {
                         {getActivityIcon(activity.activity_type, activity.action)}
                       </div>
                     </div>
-                <div className="timeline-entry-content">
+                    <div className="timeline-entry-content">
                       <div className="timeline-entry-title">
-                        {activity.action} by {activity.user_name || 'Unknown'}
+                        {activity.summary || activity.action || activity.activity_type} by {activity.user_name || 'Unknown'}
                       </div>
                       <div className="timeline-entry-details">
                         {formatActivityDetails(activity)}
                       </div>
-                  <div className="timeline-entry-meta">
+                      <div className="timeline-entry-meta">
                         {formatTime(activity.created_at)}
-                  </div>
-                </div>
-              </li>
+                      </div>
+                    </div>
+                  </li>
                 ))}
               </ul>
             </div>
-            ))
-          ) : (
+          ))
+        ) : (
           <div className="timeline-empty">
             <p>No history available</p>
             {leadId && (
@@ -271,8 +272,8 @@ function History({ leadId }) {
                 Activities will appear here when you add notes, update fields, or change stages.
               </p>
             )}
-              </div>
-          )}
+          </div>
+        )}
       </div>
     </div>
   );

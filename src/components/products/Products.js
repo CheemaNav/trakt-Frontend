@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import './Products.css';
+import useFetchWithPolling from '../../hooks/useFetchWithPolling';
+import { getAuthHeader } from '../../utils/auth';
+import { TableSkeleton } from '../common/SkeletonLoader';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001/api';
 
@@ -17,10 +20,17 @@ const FilterIcon = (props) => (
 );
 
 function Products() {
-  const [products, setProducts] = useState([]);
-  const [leads, setLeads] = useState([]);
-  const [users, setUsers] = useState([]);
-  const [loading, setLoading] = useState(true);
+  // Use custom hook for polling data
+  const { data: productsData, loading: productsLoading, refresh: refreshProducts } = useFetchWithPolling(`${API_URL}/products`);
+  const { data: leadsData } = useFetchWithPolling(`${API_URL}/leads`);
+  const { data: usersData } = useFetchWithPolling(`${API_URL}/users`);
+
+  // Derived state from hooks
+  const products = productsData?.products || [];
+  const leads = leadsData?.leads || [];
+  const users = usersData?.users || [];
+  const loading = productsLoading;
+
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedLead, setSelectedLead] = useState('');
   const [selectedProducts, setSelectedProducts] = useState([]);
@@ -43,12 +53,6 @@ function Products() {
   });
 
   useEffect(() => {
-    fetchData();
-    fetchLeads();
-    fetchUsers();
-  }, []);
-
-  useEffect(() => {
     // Close dropdown when clicking outside
     const handleClickOutside = () => {
       setShowLeadDropdown(false);
@@ -56,67 +60,6 @@ function Products() {
     document.addEventListener('click', handleClickOutside);
     return () => document.removeEventListener('click', handleClickOutside);
   }, []);
-
-  const fetchData = async () => {
-    setLoading(true);
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        setLoading(false);
-        return;
-      }
-
-      const response = await fetch(`${API_URL}/products`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        console.log('Products fetched:', data.products?.length || 0, 'products');
-        console.log('Products data:', data.products);
-        setProducts(data.products || []);
-      } else {
-        const errorData = await response.json().catch(() => ({ error: 'Failed to fetch products' }));
-        console.error('Error fetching products:', response.status, errorData);
-        alert(`Error: ${errorData.error || 'Failed to fetch products'}`);
-      }
-    } catch (error) {
-      console.error('Error fetching products:', error);
-      alert('Error fetching products. Please check your connection and try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchLeads = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_URL}/leads`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setLeads(data.leads || []);
-      }
-    } catch (error) {
-      console.error('Error fetching leads:', error);
-    }
-  };
-
-  const fetchUsers = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_URL}/users`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setUsers(data.users || []);
-      }
-    } catch (error) {
-      console.error('Error fetching users:', error);
-    }
-  };
 
   const getInitials = (name) => {
     if (!name) return '?';
@@ -217,7 +160,7 @@ function Products() {
       });
 
       if (response.ok) {
-        await fetchData();
+        await refreshProducts();
         setShowAddModal(false);
         setProductForm({
           name: '',
@@ -356,7 +299,9 @@ function Products() {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan="8" className="loading-cell">Loading products...</td>
+                <td colSpan="8" style={{ padding: 0, border: 'none' }}>
+                  <TableSkeleton rows={6} columns={7} showCheckbox={true} showAvatar={false} />
+                </td>
               </tr>
             ) : currentPageProducts.length === 0 ? (
               <tr>

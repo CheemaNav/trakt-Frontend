@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import './UserManagement.css';
+import { TableSkeleton } from '../common/SkeletonLoader';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001/api';
 
@@ -25,6 +26,59 @@ const ChevronDownIcon = (props) => (
   </svg>
 );
 
+const MultiSelectDropdown = ({ options, value, onChange, placeholder }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = React.useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleToggle = (option) => {
+    const newValue = value.includes(option)
+      ? value.filter(item => item !== option)
+      : [...value, option];
+    onChange(newValue);
+  };
+
+  return (
+    <div className="multi-select-container" ref={dropdownRef}>
+      <div className="multi-select-trigger" onClick={() => setIsOpen(!isOpen)}>
+        <span className="multi-select-value">
+          {value.length > 0
+            ? `${value.length} selected`
+            : placeholder || 'Select...'}
+        </span>
+        <ChevronDownIcon className={`multi-select-arrow ${isOpen ? 'open' : ''}`} />
+      </div>
+      {isOpen && (
+        <div className="multi-select-dropdown">
+          {options.map(option => (
+            <div
+              key={option}
+              className={`multi-select-option ${value.includes(option) ? 'selected' : ''}`}
+              onClick={() => handleToggle(option)}
+            >
+              <input
+                type="checkbox"
+                checked={value.includes(option)}
+                readOnly
+              />
+              <span>{option}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 function UserManagement() {
   const [users, setUsers] = useState([]);
   const [userStats, setUserStats] = useState({}); // Store statistics for each user
@@ -35,8 +89,11 @@ function UserManagement() {
   const [editingData, setEditingData] = useState({});
   const [showAddModal, setShowAddModal] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
-  const [newUser, setNewUser] = useState({ name: '', email: '', password: '', role: 'Customer' });
+  const [newUser, setNewUser] = useState({ name: '', email: '', password: '', role: 'Customer', pipeline: '' });
   const [inviteUser, setInviteUser] = useState({ email: '', role: 'Customer' });
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [userToDelete, setUserToDelete] = useState(null);
   const [currentUser, setCurrentUser] = useState(() => {
     const userStr = localStorage.getItem('user');
     return userStr ? JSON.parse(userStr) : null;
@@ -66,68 +123,15 @@ function UserManagement() {
     'Brazil'
   ];
 
-  useEffect(() => {
-    fetchUsers();
-    fetchPipelines();
-  }, []);
+
 
   useEffect(() => {
-    // Fetch statistics for all users
-    if (users.length > 0) {
-      users.forEach(user => {
-        fetchUserStatistics(user.id);
-      });
+    if (showAddModal && pipelines.length > 0 && !newUser.pipeline) {
+      setNewUser(prev => ({ ...prev, pipeline: pipelines[0].id }));
     }
-  }, [users]);
+  }, [showAddModal, pipelines]);
 
-  const fetchUsers = async () => {
-    try {
-      setLoading(true);
-      const token = localStorage.getItem('token');
-      // Fetch users including sub-users
-      const response = await fetch(`${API_URL}/users?include_subusers=true`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      if (response.ok) {
-        const data = await response.json();
-        console.log('Fetched users from API:', data.users); // Debug log
-        
-        // Refresh current user from localStorage to ensure we have latest data
-        const userStr = localStorage.getItem('user');
-        const latestCurrentUser = userStr ? JSON.parse(userStr) : null;
-        if (latestCurrentUser) {
-          setCurrentUser(latestCurrentUser);
-          console.log('Current user refreshed from localStorage:', latestCurrentUser); // Debug log
-        }
-        
-        // Add default values for role, countries, pipeline, and level
-        const usersWithDefaults = (data.users || []).map(user => ({
-          ...user,
-          id: user.id, // Keep original ID
-          parent_id: user.parent_id || null, // Keep parent_id (could be null or number)
-          role: user.role || 'Customer',
-          countries: user.countries ? (Array.isArray(user.countries) ? user.countries : JSON.parse(user.countries)) : [],
-          pipeline: user.pipeline_id || null,
-          status: user.status || 'active',
-          level: user.level || 0 // Keep level from backend (for hierarchy depth)
-        }));
-        console.log('Users with defaults:', usersWithDefaults.map(u => ({ id: u.id, email: u.email, parent_id: u.parent_id, name: u.name }))); // Debug log
-        console.log('Current user ID:', latestCurrentUser?.id || currentUser?.id); // Debug log
-        setUsers(usersWithDefaults);
-      } else {
-        const errorData = await response.json();
-        console.error('Error fetching users:', errorData);
-      }
-    } catch (error) {
-      console.error('Error fetching users:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchUserStatistics = async (userId) => {
+  const fetchUserStatistics = useCallback(async (userId) => {
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(`${API_URL}/users/${userId}/statistics?include_subusers=true`, {
@@ -145,9 +149,55 @@ function UserManagement() {
     } catch (error) {
       console.error(`Error fetching statistics for user ${userId}:`, error);
     }
-  };
+  }, []);
 
-  const fetchPipelines = async () => {
+  const fetchUsers = useCallback(async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem('token');
+      // Fetch users including sub-users
+      const response = await fetch(`${API_URL}/users?include_subusers=true`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Fetched users from API:', data.users); // Debug log
+
+        // Refresh current user from localStorage to ensure we have latest data
+        const userStr = localStorage.getItem('user');
+        const latestCurrentUser = userStr ? JSON.parse(userStr) : null;
+        if (latestCurrentUser) {
+          setCurrentUser(latestCurrentUser);
+          console.log('Current user refreshed from localStorage:', latestCurrentUser); // Debug log
+        }
+
+        // Add default values for role, countries, pipeline, and level
+        const usersWithDefaults = (data.users || []).map(user => ({
+          ...user,
+          id: user.id, // Keep original ID
+          parent_id: user.parent_id || null, // Keep parent_id (could be null or number)
+          role: user.role || 'Customer',
+          countries: user.countries ? (Array.isArray(user.countries) ? user.countries : JSON.parse(user.countries)) : [],
+          pipeline: user.pipeline_id || null,
+          status: user.status || 'active',
+          level: user.level || 0 // Keep level from backend (for hierarchy depth)
+        }));
+
+        setUsers(usersWithDefaults);
+      } else {
+        const errorData = await response.json();
+        console.error('Error fetching users:', errorData);
+      }
+    } catch (error) {
+      console.error('Error fetching users:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const fetchPipelines = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(`${API_URL}/pipelines`, {
@@ -162,20 +212,31 @@ function UserManagement() {
     } catch (error) {
       console.error('Error fetching pipelines:', error);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchUsers();
+    fetchPipelines();
+  }, [fetchUsers, fetchPipelines]);
+
+
 
   const handleEdit = (user) => {
     setEditingUserId(user.id);
     setEditingData({
+      name: user.name,
+      email: user.email,
+      role: user.role,
       countries: user.countries || [],
       pipeline: user.pipeline || null
     });
+    setShowEditModal(true);
   };
 
-  const handleSave = async (userId) => {
+  const handleSave = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_URL}/users/${userId}`, {
+      const response = await fetch(`${API_URL}/users/${editingUserId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -189,6 +250,7 @@ function UserManagement() {
 
       if (response.ok) {
         await fetchUsers();
+        setShowEditModal(false);
         setEditingUserId(null);
         setEditingData({});
       } else {
@@ -201,14 +263,17 @@ function UserManagement() {
     }
   };
 
-  const handleDelete = async (userId) => {
-    if (!window.confirm('Are you sure you want to delete this user?')) {
-      return;
-    }
+  const handleDelete = (userId) => {
+    setShowDeleteModal(true);
+    setUserToDelete(userId);
+  };
+
+  const confirmDelete = async () => {
+    if (!userToDelete) return;
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_URL}/users/${userId}`, {
+      const response = await fetch(`${API_URL}/users/${userToDelete}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -217,6 +282,8 @@ function UserManagement() {
 
       if (response.ok) {
         await fetchUsers();
+        setShowDeleteModal(false);
+        setUserToDelete(null);
       } else {
         const errorData = await response.json();
         alert(errorData.error || 'Failed to delete user');
@@ -237,18 +304,21 @@ function UserManagement() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify(newUser)
+        body: JSON.stringify({
+          ...newUser,
+          pipeline_id: newUser.pipeline
+        })
       });
 
       if (response.ok) {
         const responseData = await response.json();
         console.log('User created response:', responseData); // Debug log
         console.log('Created user parent_id:', responseData.user?.parent_id, 'Current user ID:', currentUser?.id); // Debug log
-        
+
         // Close modal first
         setShowAddModal(false);
-        setNewUser({ name: '', email: '', password: '', role: 'Customer' });
-        
+        setNewUser({ name: '', email: '', password: '', role: 'Customer', pipeline: '' });
+
         // Refresh current user from localStorage to ensure we have latest data
         const userStr = localStorage.getItem('user');
         if (userStr) {
@@ -256,16 +326,16 @@ function UserManagement() {
           setCurrentUser(latestUser);
           console.log('Current user refreshed:', latestUser);
         }
-        
+
         // Refresh the user list immediately, then again after a delay to ensure DB is updated
         await fetchUsers();
         setTimeout(() => {
           console.log('Refreshing users again after delay...');
           fetchUsers();
         }, 1500);
-        
+
         // Show success message
-        alert('User created successfully! The page will refresh to show the new user.');
+        // alert('User created successfully! The page will refresh to show the new user.');
       } else {
         const errorData = await response.json();
         alert(errorData.error || 'Failed to add user');
@@ -316,41 +386,41 @@ function UserManagement() {
 
     const currentUserId = typeof currentUser.id === 'string' ? parseInt(currentUser.id) : currentUser.id;
     console.log('Filtering users - Current user ID:', currentUserId, 'Total users:', users.length);
-    
+
     // Build a map of all users by ID for quick lookup
     const userMap = new Map();
     users.forEach(user => {
       userMap.set(Number(user.id), user);
     });
-    
+
     // Build a tree structure starting from current user
     const buildTree = (userId, level = 0) => {
       const result = [];
       const user = userMap.get(Number(userId));
-      
+
       if (!user) return result;
-      
+
       // Add current user with level
       const userWithLevel = { ...user, level };
       result.push(userWithLevel);
-      
+
       // Find all direct children
       const children = users.filter(u => {
         const parentId = u.parent_id != null ? (typeof u.parent_id === 'string' ? parseInt(u.parent_id, 10) : Number(u.parent_id)) : null;
         return parentId === Number(userId);
       });
-      
+
       // Recursively add children
       children.forEach(child => {
         result.push(...buildTree(child.id, level + 1));
       });
-      
+
       return result;
     };
-    
+
     // Build tree starting from current user
     const treeUsers = buildTree(currentUserId);
-    
+
     // Apply tab filter
     const filtered = treeUsers.filter(user => {
       if (activeTab === 'active') {
@@ -359,16 +429,13 @@ function UserManagement() {
         return user.status === 'invited';
       }
     });
-    
+
     console.log('Filtered tree users:', filtered.map(u => ({ id: u.id, email: u.email, level: u.level, parent_id: u.parent_id })));
-    
+
     return filtered;
   }, [users, currentUser, activeTab]);
 
-  const isSubUser = (user) => user.parent_id === currentUser?.id;
   const isCurrentUser = (user) => user.id === currentUser?.id;
-
-  const isEditing = (userId) => editingUserId === userId;
 
   return (
     <div className="user-management-container">
@@ -406,7 +473,9 @@ function UserManagement() {
       </div>
 
       {loading ? (
-        <div className="loading-state">Loading users...</div>
+        <div style={{ padding: '0' }}>
+          <TableSkeleton rows={5} columns={7} showCheckbox={false} showAvatar={false} />
+        </div>
       ) : (
         <div className="users-table-container">
           <table className="users-table">
@@ -434,16 +503,13 @@ function UserManagement() {
                   const stats = userStats[user.id] || { total_leads: 0, sub_users_count: 0 };
                   const level = user.level || 0;
                   const indent = level > 0 ? level * 20 : 0; // 20px per level
-                  
+
                   return (
                     <tr key={user.id} className={isCurrentUser(user) ? '' : 'sub-user-row'}>
                       <td>
                         <div className="user-name-cell" style={{ paddingLeft: `${indent}px` }}>
                           {level > 0 && <span className="sub-user-indicator">└─</span>}
                           {user.name}
-                          {isEditing(user.id) && (
-                            <ChevronDownIcon className="edit-indicator" />
-                          )}
                         </div>
                       </td>
                       <td>{user.email}</td>
@@ -458,99 +524,49 @@ function UserManagement() {
                           {stats.sub_users_count || 0}
                         </span>
                       </td>
-                    <td>
-                      {isEditing(user.id) ? (
-                        <select
-                          multiple
-                          className="countries-select"
-                          value={editingData.countries || []}
-                          onChange={(e) => {
-                            const selected = Array.from(e.target.selectedOptions, option => option.value);
-                            setEditingData({ ...editingData, countries: selected });
-                          }}
-                          size="3"
-                        >
-                          {countries.map(country => (
-                            <option key={country} value={country}>{country}</option>
-                          ))}
-                        </select>
-                      ) : (
+                      <td>
                         <span className="countries-display">
                           {user.countries && user.countries.length > 0
                             ? user.countries.join(', ')
                             : '-'}
                         </span>
-                      )}
-                    </td>
-                    <td>
-                      {isEditing(user.id) ? (
-                        <select
-                          className="pipeline-select"
-                          value={editingData.pipeline || ''}
-                          onChange={(e) => setEditingData({ ...editingData, pipeline: e.target.value })}
-                        >
-                          <option value="">Select pipeline</option>
-                          {pipelines.map(pipeline => (
-                            <option key={pipeline.id} value={pipeline.id}>
-                              {pipeline.name}
-                            </option>
-                          ))}
-                        </select>
-                      ) : (
+                      </td>
+                      <td>
                         <span className="pipeline-display">
                           {user.pipeline
                             ? pipelines.find(p => p.id === user.pipeline)?.name || '-'
                             : '-'}
                         </span>
-                      )}
-                    </td>
-                    <td>
-                      {isCurrentUser(user) ? (
-                        <span className="admin-badge" style={{ color: '#1976d2', fontWeight: 600 }}>
-                          Admin
-                        </span>
-                      ) : isEditing(user.id) ? (
-                        <div className="action-buttons">
-                          <button
-                            className="save-btn"
-                            onClick={() => handleSave(user.id)}
-                          >
-                            Save
-                          </button>
-                          <button
-                            className="cancel-btn-small"
-                            onClick={() => {
-                              setEditingUserId(null);
-                              setEditingData({});
-                            }}
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="action-buttons">
-                          {user.role === 'Admin' ? (
-                            <span className="admin-badge">Admin</span>
-                          ) : (
-                            <>
-                              <button
-                                className="edit-btn"
-                                onClick={() => handleEdit(user)}
-                              >
-                                Edit
-                              </button>
-                              <button
-                                className="delete-btn"
-                                onClick={() => handleDelete(user.id)}
-                              >
-                                Delete
-                              </button>
-                            </>
-                          )}
-                        </div>
-                      )}
-                    </td>
-                  </tr>
+                      </td>
+                      <td>
+                        {isCurrentUser(user) ? (
+                          <span className="admin-badge" style={{ color: '#1976d2', fontWeight: 600 }}>
+                            Admin
+                          </span>
+                        ) : (
+                          <div className="action-buttons">
+                            {user.role === 'Admin' ? (
+                              <span className="admin-badge">Admin</span>
+                            ) : (
+                              <>
+                                <button
+                                  className="edit-btn"
+                                  onClick={() => handleEdit(user)}
+                                >
+                                  Edit
+                                </button>
+                                <button
+                                  className="delete-btn"
+                                  onClick={() => handleDelete(user.id)}
+                                >
+                                  Delete
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        )}
+                      </td>
+                    </tr>
                   );
                 })
               )}
@@ -604,6 +620,20 @@ function UserManagement() {
                   <option value="Sales">Sales</option>
                 </select>
               </div>
+              <div className="form-group">
+                <label>Pipeline</label>
+                <select
+                  value={newUser.pipeline}
+                  onChange={(e) => setNewUser({ ...newUser, pipeline: e.target.value })}
+                >
+                  <option value="">Select pipeline</option>
+                  {pipelines.map(pipeline => (
+                    <option key={pipeline.id} value={pipeline.id}>
+                      {pipeline.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
               <div className="modal-actions">
                 <button className="cancel-btn" onClick={() => setShowAddModal(false)}>
                   Cancel
@@ -652,6 +682,109 @@ function UserManagement() {
                   Send Invite
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit User Modal */}
+      {showEditModal && (
+        <div className="modal-overlay" onClick={() => setShowEditModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <h2>Edit User</h2>
+            <div className="modal-form">
+              <div className="form-group">
+                <label>Name</label>
+                <input
+                  type="text"
+                  value={editingData.name || ''}
+                  disabled
+                  title="Name cannot be changed"
+                  style={{ backgroundColor: '#f5f5f5', cursor: 'not-allowed' }}
+                />
+              </div>
+              <div className="form-group">
+                <label>Email</label>
+                <input
+                  type="email"
+                  value={editingData.email || ''}
+                  disabled
+                  title="Email cannot be changed"
+                  style={{ backgroundColor: '#f5f5f5', cursor: 'not-allowed' }}
+                />
+              </div>
+              <div className="form-group">
+                <label>Role</label>
+                <input
+                  type="text"
+                  value={editingData.role || ''}
+                  disabled
+                  style={{ backgroundColor: '#f5f5f5', cursor: 'not-allowed' }}
+                />
+              </div>
+              <div className="form-group">
+                <label>Countries</label>
+                <MultiSelectDropdown
+                  options={countries}
+                  value={editingData.countries || []}
+                  onChange={(selected) => setEditingData({ ...editingData, countries: selected })}
+                  placeholder="Select countries"
+                />
+              </div>
+              <div className="form-group">
+                <label>Pipeline</label>
+                <select
+                  className="pipeline-select"
+                  value={editingData.pipeline || ''}
+                  onChange={(e) => setEditingData({ ...editingData, pipeline: e.target.value })}
+                >
+                  <option value="">Select pipeline</option>
+                  {pipelines.map(pipeline => (
+                    <option key={pipeline.id} value={pipeline.id}>
+                      {pipeline.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="modal-actions">
+                <button
+                  className="cancel-btn"
+                  onClick={() => {
+                    setShowEditModal(false);
+                    setEditingData({});
+                    setEditingUserId(null);
+                  }}
+                >
+                  Cancel
+                </button>
+                <button className="save-btn" onClick={handleSave}>
+                  Save Changes
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="modal-overlay" onClick={() => setShowDeleteModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <h2>Delete User</h2>
+            <div className="modal-body">
+              <p>Are you sure you want to delete this user? This action cannot be undone.</p>
+            </div>
+            <div className="modal-actions">
+              <button className="cancel-btn" onClick={() => setShowDeleteModal(false)}>
+                Cancel
+              </button>
+              <button
+                className="delete-btn"
+                onClick={confirmDelete}
+                style={{ backgroundColor: '#dc3545', color: 'white' }}
+              >
+                Delete
+              </button>
             </div>
           </div>
         </div>

@@ -2,9 +2,9 @@
 .lead-card-deal {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
-  border-radius: 6px;
-  padding: 18px;
-  margin-bottom: 12px;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 10px;
   position: relative;
   user-select: none;
   transition: box-shadow 0.22s ease, transform 0.22s ease, border-color 0.22s ease;
@@ -13,6 +13,7 @@
 
 .lead-card-deal:hover {
   border-color: rgba(26, 115, 232, 0.28);
+  box-shadow: 0 2px 8px rgba(26, 115, 232, 0.08);
 }
 
 .lead-card-deal:active {
@@ -31,75 +32,140 @@
   background: #ffe0b2;
 }
 
-.lead-type-badge .lead-type-label { display: none; }
-/* Lead Type Badge - Top Right */
+/* Top Row: Title + Badges */
+.card-top-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.card-badges {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+/* Lead Type Badge */
 .lead-type-badge {
-  position: absolute;
-  top: 12px;
-  right: 12px;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
-  border-radius: 12px;
-  font-size: 0.75rem;
+  justify-content: center;
+  padding: 4px 8px;
+  border-radius: 10px;
+  font-size: 0.7rem;
   font-weight: 600;
   color: white;
-  z-index: 2;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+  white-space: nowrap;
 }
 
 .lead-type-icon {
-  font-size: 0.875rem;
+  font-size: 0.8rem;
   line-height: 1;
 }
 
 .lead-type-label {
-  font-size: 0.7rem;
+  font-size: 0.65rem;
   white-space: nowrap;
-}
-
-/* Status Icon - Top Right */
-.deal-status-icon {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   display: none;
-  z-index: 1;
-  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.12);
-}
-
-.deal-status-icon-indicator {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: #ffffff;
-  opacity: 0.9;
 }
 
 /* Deal Title */
 .deal-title {
-  font-size: 1.05rem;
+  font-size: 0.95rem;
   font-weight: 700;
   color: var(--color-heading);
-  margin: 0 0 6px 0;
-  padding-right: 120px;
+  margin: 0;
   line-height: 1.35;
   letter-spacing: -0.01em;
+  word-break: break-word;
 }
 
 /* Company Name */
 .deal-company {
-  font-size: 0.88rem;
+  font-size: 0.8rem;
   color: var(--color-text-muted);
-  margin: 0 0 14px 0;
-  line-height: 1.45;
+  margin: 2px 0 0 0;
+  line-height: 1.4;
+}
+
+/* Contact Details Row */
+.card-contact-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--color-border, #eee);
+}
+
+.card-contact-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  color: var(--color-text-muted, #6b7280);
+  overflow: hidden;
+}
+
+.card-contact-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  color: var(--color-text-muted, #9ca3af);
+}
+
+.card-contact-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.card-contact-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Dates Row */
+.card-dates-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.card-date-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.75rem;
+  color: var(--color-text-muted, #9ca3af);
+  white-space: nowrap;
+}
+
+.card-date-item.date-expired {
+  color: #ea4335;
+  font-weight: 600;
+}
+
+.card-date-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
+}
+
+.card-date-icon svg {
+  width: 100%;
+  height: 100%;
 }
 
 /* Deal Footer */
@@ -108,23 +174,25 @@
   align-items: center;
   justify-content: space-between;
   margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--color-border, #eee);
 }
 
 .deal-value {
-  font-size: 0.9rem;
+  font-size: 0.88rem;
   color: var(--color-heading);
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .deal-value-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 16px;
-  height: 16px;
+  width: 15px;
+  height: 15px;
   color: var(--color-text-muted);
 }
 
@@ -133,6 +201,38 @@
   height: 100%;
 }
 
+.card-footer-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.card-country {
+  font-size: 0.72rem;
+  color: var(--color-text-muted, #9ca3af);
+  background: var(--color-bg, #f3f4f6);
+  padding: 2px 8px;
+  border-radius: 10px;
+  white-space: nowrap;
+}
+
+.card-owner-avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  flex-shrink: 0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Actions Toggle */
 .deal-actions-toggle {
   background: none;
   border: none;
@@ -190,6 +290,11 @@
 
 .action-menu-delete:hover {
   background-color: #fee;
+}
+
+/* Status Icon (hidden by default, kept for compatibility) */
+.deal-status-icon {
+  display: none;
 }
 
 /* Keep old styles for backward compatibility */

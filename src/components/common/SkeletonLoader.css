@@ -1,0 +1,282 @@
+/* ===== Skeleton Loader Styles ===== */
+
+/* Base skeleton element */
+.skeleton {
+    background: #e8e8e8;
+    border-radius: 4px;
+    position: relative;
+    overflow: hidden;
+}
+
+.skeleton::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg,
+            transparent 0%,
+            rgba(255, 255, 255, 0.5) 50%,
+            transparent 100%);
+    animation: skeleton-shimmer 1.5s ease-in-out infinite;
+}
+
+@keyframes skeleton-shimmer {
+    0% {
+        transform: translateX(-100%);
+    }
+
+    100% {
+        transform: translateX(100%);
+    }
+}
+
+/* Line skeleton */
+.skeleton-line {
+    height: 14px;
+    margin-bottom: 8px;
+}
+
+.skeleton-line:last-child {
+    margin-bottom: 0;
+}
+
+/* Circle skeleton (avatars) */
+.skeleton-circle {
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+/* Card skeleton */
+.skeleton-card {
+    background: #fff;
+    border: 1px solid #eee;
+    border-radius: 12px;
+    padding: 20px;
+}
+
+/* ===== Dashboard Skeleton ===== */
+.skeleton-dashboard {
+    padding: 0;
+}
+
+.skeleton-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.skeleton-metric-card {
+    background: #fff;
+    border: 1px solid #eee;
+    border-radius: 12px;
+    padding: 20px;
+}
+
+.skeleton-metric-card .skeleton-line:first-child {
+    width: 60%;
+    height: 12px;
+    margin-bottom: 14px;
+}
+
+.skeleton-metric-card .skeleton-line:nth-child(2) {
+    width: 40%;
+    height: 28px;
+    margin-bottom: 10px;
+}
+
+.skeleton-metric-card .skeleton-line:nth-child(3) {
+    width: 75%;
+    height: 10px;
+}
+
+.skeleton-charts-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.skeleton-chart-card {
+    background: #fff;
+    border: 1px solid #eee;
+    border-radius: 12px;
+    padding: 20px;
+    min-height: 280px;
+}
+
+.skeleton-chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.skeleton-chart-header .skeleton-line:first-child {
+    width: 120px;
+    height: 16px;
+}
+
+.skeleton-chart-tabs {
+    display: flex;
+    gap: 8px;
+}
+
+.skeleton-chart-tabs .skeleton-line {
+    width: 50px;
+    height: 24px;
+    border-radius: 4px;
+}
+
+.skeleton-chart-body {
+    display: flex;
+    align-items: flex-end;
+    gap: 12px;
+    height: 200px;
+    padding-top: 20px;
+}
+
+.skeleton-chart-bar {
+    flex: 1;
+    border-radius: 4px 4px 0 0;
+}
+
+.skeleton-bottom-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+/* ===== Table Skeleton ===== */
+.skeleton-table-container {
+    background: #fff;
+    border: 1px solid #eee;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.skeleton-table-header {
+    display: flex;
+    align-items: center;
+    padding: 14px 20px;
+    background: #fafafa;
+    border-bottom: 1px solid #eee;
+    gap: 16px;
+}
+
+.skeleton-table-header .skeleton-line {
+    margin-bottom: 0;
+}
+
+.skeleton-table-row {
+    display: flex;
+    align-items: center;
+    padding: 14px 20px;
+    border-bottom: 1px solid #f0f0f0;
+    gap: 16px;
+}
+
+.skeleton-table-row:last-child {
+    border-bottom: none;
+}
+
+.skeleton-table-cell {
+    flex: 1;
+}
+
+.skeleton-table-cell .skeleton-line {
+    margin-bottom: 0;
+}
+
+.skeleton-table-cell-narrow {
+    flex: 0 0 40px;
+}
+
+.skeleton-table-cell-avatar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1.5;
+}
+
+/* ===== Kanban / Pipeline Skeleton ===== */
+.skeleton-kanban {
+    display: flex;
+    gap: 16px;
+    overflow-x: auto;
+    padding-bottom: 16px;
+}
+
+.skeleton-kanban-column {
+    min-width: 280px;
+    flex: 1;
+    background: #f5f5f5;
+    border-radius: 12px;
+    padding: 16px;
+}
+
+.skeleton-kanban-column-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.skeleton-kanban-card {
+    background: #fff;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    padding: 14px;
+    margin-bottom: 10px;
+}
+
+.skeleton-kanban-card:last-child {
+    margin-bottom: 0;
+}
+
+.skeleton-kanban-card .skeleton-line:first-child {
+    width: 70%;
+    height: 14px;
+    margin-bottom: 10px;
+}
+
+.skeleton-kanban-card .skeleton-line:nth-child(2) {
+    width: 50%;
+    height: 12px;
+    margin-bottom: 8px;
+}
+
+.skeleton-kanban-card .skeleton-line:nth-child(3) {
+    width: 35%;
+    height: 12px;
+}
+
+/* ===== Reports Summary Skeleton ===== */
+.skeleton-summary-grid {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.skeleton-summary-card {
+    flex: 1;
+    background: #fff;
+    border: 1px solid #eee;
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+}
+
+.skeleton-summary-card .skeleton-line:first-child {
+    width: 60%;
+    height: 10px;
+    margin: 0 auto 12px;
+}
+
+.skeleton-summary-card .skeleton-line:nth-child(2) {
+    width: 40%;
+    height: 28px;
+    margin: 0 auto;
+}

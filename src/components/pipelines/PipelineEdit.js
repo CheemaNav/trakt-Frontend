@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import './PipelineAdd.css';
+import { getAuthHeader } from '../../utils/auth';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001/api';
 
@@ -39,11 +40,9 @@ function PipelineEdit() {
     const fetchPipeline = async () => {
       try {
         setIsLoading(true);
-        const token = localStorage.getItem('token');
+        const headers = getAuthHeader();
         const response = await fetch(`${API_URL}/pipelines/${id}`, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
+          headers
         });
 
         if (response.ok) {

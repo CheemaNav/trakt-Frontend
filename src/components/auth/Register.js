@@ -41,25 +41,26 @@ function Register() {
     setLoading(true);
 
     try {
+      const payload = {
+        name: formData.name,
+        email: formData.email,
+        password: formData.password
+      };
+      console.log('Register payload:', payload);
+
       const response = await fetch(`${API_URL}/auth/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          name: formData.name,
-          email: formData.email,
-          password: formData.password
-        }),
+        body: JSON.stringify(payload),
       });
 
       const data = await response.json();
 
       if (response.ok) {
-        // Auto login after registration
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('user', JSON.stringify(data.user));
-        navigate('/dashboard');
+        // Navigate to OTP verification screen
+        navigate('/verify-otp', { state: { email: data.email } });
       } else {
         setError(data.error || 'Registration failed');
       }
@@ -128,7 +129,7 @@ function Register() {
                   placeholder="Create a password"
                   required
                 />
-                <span 
+                <span
                   className="password-toggle-icon"
                   onClick={() => setShowPassword(!showPassword)}
                 >
@@ -159,7 +160,7 @@ function Register() {
                   placeholder="Confirm your password"
                   required
                 />
-                <span 
+                <span
                   className="password-toggle-icon"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                 >

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './Organizations.css';
+import { TableSkeleton } from '../common/SkeletonLoader';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001/api';
 
@@ -213,8 +214,8 @@ function Organizations() {
   };
 
   const handleSelectOrganization = (orgId) => {
-    setSelectedOrganizations(prev => 
-      prev.includes(orgId) 
+    setSelectedOrganizations(prev =>
+      prev.includes(orgId)
         ? prev.filter(id => id !== orgId)
         : [...prev, orgId]
     );
@@ -298,7 +299,9 @@ function Organizations() {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan="7" className="loading-cell">Loading organizations...</td>
+                <td colSpan="7" style={{ padding: 0, border: 'none' }}>
+                  <TableSkeleton rows={6} columns={6} showCheckbox={true} showAvatar={true} />
+                </td>
               </tr>
             ) : currentPageOrganizations.length === 0 ? (
               <tr>
@@ -316,7 +319,7 @@ function Organizations() {
                   </td>
                   <td>
                     <div className="organization-name">
-                      <div 
+                      <div
                         className="organization-avatar"
                         style={{ backgroundColor: getAvatarColor(org.name) }}
                       >
@@ -347,7 +350,7 @@ function Organizations() {
                   <td>
                     {org.owner_id ? (
                       <div className="owner-cell">
-                        <div 
+                        <div
                           className="owner-avatar"
                           style={{ backgroundColor: getAvatarColor(getOwnerName(org.owner_id)) }}
                         >
@@ -376,7 +379,7 @@ function Organizations() {
           Showing {filteredOrganizations.length === 0 ? 0 : startIndex + 1} to {Math.min(endIndex, filteredOrganizations.length)} of {filteredOrganizations.length} entries
         </div>
         <div className="organizations-pagination">
-          <button 
+          <button
             className="pagination-btn"
             disabled={currentPage === 1}
             onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
@@ -392,7 +395,7 @@ function Organizations() {
               {page}
             </button>
           ))}
-          <button 
+          <button
             className="pagination-btn"
             disabled={currentPage === totalPages || totalPages === 0}
             onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}

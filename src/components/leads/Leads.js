@@ -4,6 +4,7 @@ import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import AddLeadModal from './AddLeadModal';
 import LeadCard from './LeadCard';
+import { KanbanSkeleton, TableSkeleton } from '../common/SkeletonLoader';
 import './Leads.css';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001/api';
@@ -167,13 +168,16 @@ function Leads() {
     'Lost'
   ]);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [stagesLoaded, setStagesLoaded] = useState(false);
+  const [pipelinesLoaded, setPipelinesLoaded] = useState(false);
   const [pipelines, setPipelines] = useState([]);
   const [selectedPipeline, setSelectedPipeline] = useState(() => {
     // Load selected pipeline from localStorage on mount
     const savedPipelineId = localStorage.getItem('selectedPipelineId');
     return savedPipelineId ? { id: parseInt(savedPipelineId) } : null;
   });
-  const [stages, setStages] = useState(DEFAULT_STAGES);
+  const [stages, setStages] = useState([]);
   const [showPipelineDropdown, setShowPipelineDropdown] = useState(false);
 
   useEffect(() => {
@@ -187,18 +191,23 @@ function Leads() {
     // Only fetch if we have a full pipeline object (not just an ID)
     if (selectedPipeline && selectedPipeline.id && selectedPipeline.name) {
       fetchLeads();
-    } else if (!selectedPipeline && pipelines.length === 0) {
-      // No pipelines exist yet, fetch all leads (for backward compatibility)
+    } else if (!selectedPipeline && pipelinesLoaded && pipelines.length === 0) {
+      // No pipelines exist, fetch all leads (for backward compatibility)
       fetchLeads();
     }
   }, [selectedPipeline]);
 
   useEffect(() => {
+    if (!pipelinesLoaded) {
+      // Pipelines haven't been fetched yet, wait for them
+      return;
+    }
+
     if (pipelines.length === 0) {
-      // No pipelines yet, use default stages
+      // No pipelines exist, use default stages (backward compatibility)
       setStages(DEFAULT_STAGES);
+      setStagesLoaded(true);
       setStatusOptions(DEFAULT_STAGES.map(s => s.label || s.name));
-      // Fetch leads without pipeline filter (for backward compatibility)
       fetchLeads();
       return;
     }
@@ -243,7 +252,7 @@ function Leads() {
       localStorage.setItem('selectedPipelineId', defaultPipeline.id.toString());
       // fetchLeads will be called by the selectedPipeline useEffect
     }
-  }, [pipelines]);
+  }, [pipelines, pipelinesLoaded]);
 
   // Refresh status options whenever stages change
   useEffect(() => {
@@ -271,13 +280,14 @@ function Leads() {
         setPipelines(data.pipelines || []);
       } else {
         console.error('Failed to fetch pipelines:', response.status, response.statusText);
-        // If 404, it might mean the backend hasn't been restarted
         if (response.status === 404) {
           console.warn('Pipelines endpoint not found. Please restart the backend server.');
         }
       }
     } catch (error) {
       console.error('Error fetching pipelines:', error);
+    } finally {
+      setPipelinesLoaded(true);
     }
   };
 
@@ -310,14 +320,12 @@ function Leads() {
             probability: stage.probability || 0
           }));
           console.log('[Leads] Setting formatted stages:', formattedStages);
-          // FIX: Don't fallback to DEFAULT_STAGES if we have an explicit pipeline response, 
-          // essentially trust the API. If empty, it's empty.
           setStages(formattedStages);
+          setStagesLoaded(true);
         } else {
           console.warn('[Leads] No stages found in response.');
-          // If the pipeline exists but has no stages, we should probably show empty or a placeholder, 
-          // NOT default stages which won't match the leads.
           setStages([]);
+          setStagesLoaded(true);
         }
       } else {
         console.error('Failed to fetch pipeline stages:', response.status);
@@ -440,6 +448,7 @@ function Leads() {
       setLeads([]);
     } finally {
       setIsRefreshing(false);
+      setInitialLoading(false);
     }
   };
 
@@ -691,7 +700,12 @@ function Leads() {
   const getLeadsByStage = (stage, allStages) => {
     const stageId = stage.stageId || stage.id;
     const stageName = (stage.name || stage.label || stage.id).toLowerCase();
-    const isFirstStage = allStages && allStages.length > 0 && (String(allStages[0].id) === String(stage.id) || String(allStages[0].stageId) === String(stage.stageId));
+    // Fix: only compare stageId if it actually exists (not undefined)
+    const firstStage = allStages && allStages.length > 0 ? allStages[0] : null;
+    const isFirstStage = firstStage && (
+      String(firstStage.id) === String(stage.id) ||
+      (firstStage.stageId != null && stage.stageId != null && String(firstStage.stageId) === String(stage.stageId))
+    );
 
     // filteredLeads already filters by pipeline, so we just need to match by stage
     const matchedLeads = filteredLeads.filter((lead) => {
@@ -900,173 +914,181 @@ function Leads() {
         {viewMode === 'Pipeline' && (
           /* Kanban Board */
           <div className='leads-kanban-board'>
-            <div className="kanban-board">
-              {stages.map((stage) => {
-                const stageLeads = getLeadsByStage(stage, stages);
-                const totalValue = getTotalValue(stageLeads);
+            {(initialLoading || !stagesLoaded) ? (
+              <KanbanSkeleton columns={4} cardsPerColumn={3} />
+            ) : (
+              <div className="kanban-board">
+                {stages.map((stage) => {
+                  const stageLeads = getLeadsByStage(stage, stages);
+                  const totalValue = getTotalValue(stageLeads);
 
-                return (
-                  <DroppableColumn
-                    key={stage.stageId || stage.id}
-                    status={stage}
-                    onDrop={handleDrop}
-                    onAddLead={() => setShowAddModal(true)}
-                  >
-                    <div className="column-header">
-                      <div className="column-title">
-                        <span
-                          className="status-dot"
-                          style={{ backgroundColor: stage.color }}
-                          aria-hidden="true"
-                        />
-                        <span>{stage.label || stage.name}</span>
+                  return (
+                    <DroppableColumn
+                      key={stage.stageId || stage.id}
+                      status={stage}
+                      onDrop={handleDrop}
+                      onAddLead={() => setShowAddModal(true)}
+                    >
+                      <div className="column-header">
+                        <div className="column-title">
+                          <span
+                            className="status-dot"
+                            style={{ backgroundColor: stage.color }}
+                            aria-hidden="true"
+                          />
+                          <span>{stage.label || stage.name}</span>
+                        </div>
+                        <div className="column-stats">
+                          {stageLeads.length} Leads - {formatValue(totalValue)}
+                        </div>
+                        <div className="status-bar" style={{ backgroundColor: stage.color }}></div>
                       </div>
-                      <div className="column-stats">
-                        {stageLeads.length} Leads - {formatValue(totalValue)}
-                      </div>
-                      <div className="status-bar" style={{ backgroundColor: stage.color }}></div>
-                    </div>
 
-                    <div className="column-content">
-                      {stageLeads.map((lead) => (
-                        <DraggableLeadCard
-                          key={lead.id}
-                          lead={lead}
-                          onDelete={() => handleDeleteLead(lead.id)}
-                          onEdit={() => openEditModal(lead)}
-                          onStatusChange={(newStageId) => handleDrop(lead.id, newStageId)}
-                        />
-                      ))}
-                    </div>
-                  </DroppableColumn>
-                );
-              })}
-            </div>
+                      <div className="column-content">
+                        {stageLeads.map((lead) => (
+                          <DraggableLeadCard
+                            key={lead.id}
+                            lead={lead}
+                            onDelete={() => handleDeleteLead(lead.id)}
+                            onEdit={() => openEditModal(lead)}
+                            onStatusChange={(newStageId) => handleDrop(lead.id, newStageId)}
+                          />
+                        ))}
+                      </div>
+                    </DroppableColumn>
+                  );
+                })}
+              </div>
+            )}
           </div>
         )}
 
         {viewMode === 'List' && (
           /* List View */
           <div className="list-view">
-            <table className="deals-table">
-              <thead>
-                <tr>
-                  <th><input type="checkbox" /></th>
-                  <th>Title</th>
-                  <th>Organization</th>
-                  <th>Contact Person</th>
-                  <th>Expected Close Date</th>
-                  <th>Pipeline</th>
-                  <th>Pipeline Stage</th>
-                  <th>Status</th>
-                  <th>Last Activity</th>
-                  <th>Owner</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredLeads.map((lead) => {
-                  // Check if lead is expired
-                  const isExpired = () => {
-                    const closeDate = lead.expected_close_date || lead.expectedCloseDate;
-                    if (!closeDate) return false;
+            {initialLoading ? (
+              <TableSkeleton rows={8} columns={10} showCheckbox={true} showAvatar={false} />
+            ) : (
+              <table className="deals-table">
+                <thead>
+                  <tr>
+                    <th><input type="checkbox" /></th>
+                    <th>Title</th>
+                    <th>Organization</th>
+                    <th>Contact Person</th>
+                    <th>Expected Close Date</th>
+                    <th>Pipeline</th>
+                    <th>Pipeline Stage</th>
+                    <th>Status</th>
+                    <th>Last Activity</th>
+                    <th>Owner</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredLeads.map((lead) => {
+                    // Check if lead is expired
+                    const isExpired = () => {
+                      const closeDate = lead.expected_close_date || lead.expectedCloseDate;
+                      if (!closeDate) return false;
 
-                    const today = new Date();
-                    today.setHours(0, 0, 0, 0);
-                    const expiryDate = new Date(closeDate);
-                    expiryDate.setHours(0, 0, 0, 0);
+                      const today = new Date();
+                      today.setHours(0, 0, 0, 0);
+                      const expiryDate = new Date(closeDate);
+                      expiryDate.setHours(0, 0, 0, 0);
 
-                    const isClosed = lead.status === 'won' || lead.status === 'Closed' || lead.status === 'closed';
-                    return !isClosed && expiryDate < today;
-                  };
+                      const isClosed = lead.status === 'won' || lead.status === 'Closed' || lead.status === 'closed';
+                      return !isClosed && expiryDate < today;
+                    };
 
-                  const expired = isExpired();
+                    const expired = isExpired();
 
-                  return (
-                    <tr
-                      key={lead.id}
-                      onClick={() => navigate(`/leads/${lead.id}`)}
-                      style={{ cursor: 'pointer' }}
-                      className={expired ? 'expired-lead-row' : ''}
-                    >
-                      <td><input type="checkbox" /></td>
-                      <td className="title-cell">
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <div className="deal-title">{lead.company || lead.name} Deal</div>
-                          {(lead.lead_type || lead.leadType) && (
-                            <span style={{
-                              fontSize: '0.75rem',
-                              padding: '2px 8px',
-                              borderRadius: '12px',
-                              backgroundColor: (lead.lead_type || lead.leadType) === 'hot' ? '#ea4335' : (lead.lead_type || lead.leadType) === 'warm' ? '#fbbc04' : '#1a73e8',
-                              color: 'white',
-                              fontWeight: '600'
-                            }}>
-                              {(lead.lead_type || lead.leadType) === 'hot' ? '🔥' : (lead.lead_type || lead.leadType) === 'warm' ? '🌤' : '❄️'} {(lead.lead_type || lead.leadType).charAt(0).toUpperCase() + (lead.lead_type || lead.leadType).slice(1)}
-                            </span>
-                          )}
-                        </div>
-                        <div className="deal-value">Value: ${lead.value || 0}</div>
-                      </td>
-                      <td>{lead.company || 'NA'}</td>
-                      <td>{lead.name}</td>
-                      <td>{lead.created_at ? new Date(lead.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A'}</td>
-                      <td>Default Pipeline</td>
-                      <td>
-                        <span className={`stage-pill ${lead.status.toLowerCase().replace(' ', '-')}`}>
-                          {lead.status}
-                        </span>
-                      </td>
-                      <td><span className="status-pill open">Open</span></td>
-                      <td className="activity-cell">
-                        <div className="activity-text">No recent activity</div>
-                        <div className="activity-date">Nov 3, 2025, 11:26 AM</div>
-                      </td>
-                      <td>
-                        <select className="owner-select">
-                          <option>Mike</option>
-                        </select>
-                      </td>
-                      <td style={{ position: 'relative' }}>
-                        <button
-                          className="action-menu"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setOpenMenuId(openMenuId === lead.id ? null : lead.id);
-                          }}
-                        >
-                          ⋮
-                        </button>
-                        {openMenuId === lead.id && (
-                          <div className="list-action-menu" onClick={(e) => e.stopPropagation()}>
-                            <button
-                              className="action-menu-item"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setOpenMenuId(null);
-                                openEditModal(lead);
-                              }}
-                            >
-                              Edit
-                            </button>
-                            <button
-                              className="action-menu-item action-menu-delete"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setOpenMenuId(null);
-                                handleDeleteLead(lead.id);
-                              }}
-                            >
-                              Delete
-                            </button>
+                    return (
+                      <tr
+                        key={lead.id}
+                        onClick={() => navigate(`/leads/${lead.id}`)}
+                        style={{ cursor: 'pointer' }}
+                        className={expired ? 'expired-lead-row' : ''}
+                      >
+                        <td><input type="checkbox" /></td>
+                        <td className="title-cell">
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <div className="deal-title">{lead.company || lead.name} Deal</div>
+                            {(lead.lead_type || lead.leadType) && (
+                              <span style={{
+                                fontSize: '0.75rem',
+                                padding: '2px 8px',
+                                borderRadius: '12px',
+                                backgroundColor: (lead.lead_type || lead.leadType) === 'hot' ? '#ea4335' : (lead.lead_type || lead.leadType) === 'warm' ? '#fbbc04' : '#1a73e8',
+                                color: 'white',
+                                fontWeight: '600'
+                              }}>
+                                {(lead.lead_type || lead.leadType) === 'hot' ? '🔥' : (lead.lead_type || lead.leadType) === 'warm' ? '🌤' : '❄️'} {(lead.lead_type || lead.leadType).charAt(0).toUpperCase() + (lead.lead_type || lead.leadType).slice(1)}
+                              </span>
+                            )}
                           </div>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                          <div className="deal-value">Value: ${lead.value || 0}</div>
+                        </td>
+                        <td>{lead.company || 'NA'}</td>
+                        <td>{lead.name}</td>
+                        <td>{lead.created_at ? new Date(lead.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A'}</td>
+                        <td>Default Pipeline</td>
+                        <td>
+                          <span className={`stage-pill ${lead.status.toLowerCase().replace(' ', '-')}`}>
+                            {lead.status}
+                          </span>
+                        </td>
+                        <td><span className="status-pill open">Open</span></td>
+                        <td className="activity-cell">
+                          <div className="activity-text">No recent activity</div>
+                          <div className="activity-date">Nov 3, 2025, 11:26 AM</div>
+                        </td>
+                        <td>
+                          <select className="owner-select">
+                            <option>Mike</option>
+                          </select>
+                        </td>
+                        <td style={{ position: 'relative' }}>
+                          <button
+                            className="action-menu"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setOpenMenuId(openMenuId === lead.id ? null : lead.id);
+                            }}
+                          >
+                            ⋮
+                          </button>
+                          {openMenuId === lead.id && (
+                            <div className="list-action-menu" onClick={(e) => e.stopPropagation()}>
+                              <button
+                                className="action-menu-item"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setOpenMenuId(null);
+                                  openEditModal(lead);
+                                }}
+                              >
+                                Edit
+                              </button>
+                              <button
+                                className="action-menu-item action-menu-delete"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setOpenMenuId(null);
+                                  handleDeleteLead(lead.id);
+                                }}
+                              >
+                                Delete
+                              </button>
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            )}
           </div>
         )}
 
@@ -1102,7 +1124,7 @@ function Leads() {
           />
         )}
       </div>
-    </DndProvider>
+    </DndProvider >
   );
 }
 

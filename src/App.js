@@ -1,6 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { Login, Register } from './components/auth';
+import { Login, Register, VerifyOTP } from './components/auth';
 import { Dashboard } from './components/common';
 import GmailCallback from './components/gmail/GmailCallback';
 import './App.css';
@@ -22,33 +22,41 @@ function App() {
     <Router>
       <Routes>
         <Route path="/" element={<Navigate to="/login" replace />} />
-        <Route 
-          path="/login" 
+        <Route
+          path="/login"
           element={
             <PublicRoute>
               <Login />
             </PublicRoute>
-          } 
+          }
         />
-        <Route 
-          path="/register" 
+        <Route
+          path="/register"
           element={
             <PublicRoute>
               <Register />
             </PublicRoute>
-          } 
+          }
         />
-        <Route 
-          path="/gmail-callback" 
-          element={<GmailCallback />} 
+        <Route
+          path="/verify-otp"
+          element={
+            <PublicRoute>
+              <VerifyOTP />
+            </PublicRoute>
+          }
         />
-        <Route 
-          path="/*" 
+        <Route
+          path="/gmail-callback"
+          element={<GmailCallback />}
+        />
+        <Route
+          path="/*"
           element={
             <ProtectedRoute>
               <Dashboard />
             </ProtectedRoute>
-          } 
+          }
         />
       </Routes>
     </Router>
